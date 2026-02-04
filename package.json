@@ -1,12 +1,12 @@
 {
 	"name": "better-pm",
 	"version": "0.1.0",
-	"description": "CLI for package manager operations in monorepos",
+	"description": "Better CLI for package manager operations (especially in monorepos)",
 	"type": "module",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/fdarian/pm.git"
+		"url": "https://github.com/fdarian/better-pm.git"
 	},
 	"bin": {
 		"pm": "./bin.mjs"
