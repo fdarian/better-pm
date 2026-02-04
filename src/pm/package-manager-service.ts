@@ -33,14 +33,29 @@ export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray
 		const packages: Array<{ name: string; relDir: string }> = [];
 
 		for (const glob of globs) {
+			const isGlobPattern = /\/\*+$/.test(glob);
 			const baseDir = glob.replace(/\/\*+$/, '');
 			const fullBase = path.join(lockDir, baseDir);
 			const exists = yield* fs.exists(fullBase);
 			if (!exists) continue;
 
-			const entries = yield* fs.readDirectory(fullBase);
-			for (const entry of entries) {
-				const pkgJsonPath = path.join(fullBase, entry, 'package.json');
+			if (isGlobPattern) {
+				const entries = yield* fs.readDirectory(fullBase);
+				for (const entry of entries) {
+					const pkgJsonPath = path.join(fullBase, entry, 'package.json');
+					const pkgExists = yield* fs.exists(pkgJsonPath);
+					if (!pkgExists) continue;
+
+					const content = yield* fs.readFileString(pkgJsonPath);
+					const decoded = yield* Schema.decode(
+						Schema.parseJson(WorkspacePackageJson),
+					)(content).pipe(Effect.option);
+					if (decoded._tag === 'Some') {
+						packages.push({ name: decoded.value.name, relDir: path.join(baseDir, entry) });
+					}
+				}
+			} else {
+				const pkgJsonPath = path.join(fullBase, 'package.json');
 				const pkgExists = yield* fs.exists(pkgJsonPath);
 				if (!pkgExists) continue;
 
@@ -49,7 +64,7 @@ export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray
 					Schema.parseJson(WorkspacePackageJson),
 				)(content).pipe(Effect.option);
 				if (decoded._tag === 'Some') {
-					packages.push({ name: decoded.value.name, relDir: path.join(baseDir, entry) });
+					packages.push({ name: decoded.value.name, relDir: baseDir });
 				}
 			}
 		}
