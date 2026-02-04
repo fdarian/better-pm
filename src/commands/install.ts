@@ -140,7 +140,7 @@ const listWorkspacePackages = (lockDir: string, pm: PackageManager) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
-		const names: Array<string> = [];
+		const packages: Array<{ name: string; relDir: string }> = [];
 
 		let globs: ReadonlyArray<string> = [];
 
@@ -185,12 +185,12 @@ const listWorkspacePackages = (lockDir: string, pm: PackageManager) =>
 					Schema.parseJson(WorkspacePackageJson),
 				)(content).pipe(Effect.option);
 				if (decoded._tag === 'Some') {
-					names.push(decoded.value.name);
+					packages.push({ name: decoded.value.name, relDir: path.join(baseDir, entry) });
 				}
 			}
 		}
 
-		return names;
+		return packages;
 	});
 
 const runShellCommand = (cmd: ShellCommand.Command) =>
@@ -232,12 +232,46 @@ const filterOption = cli.Options.text('filter').pipe(
 	cli.Options.repeated,
 );
 
+const formatWorkspaceTree = (
+	packages: Array<{ name: string; relDir: string }>,
+	sep: string,
+) => {
+	const grouped = new Map<string, Array<{ name: string; dirName: string }>>();
+	for (const pkg of packages) {
+		const parts = pkg.relDir.split(sep);
+		const group = parts[0];
+		const dirName = parts.slice(1).join(sep);
+		if (!grouped.has(group)) {
+			grouped.set(group, []);
+		}
+		grouped.get(group)!.push({ name: pkg.name, dirName });
+	}
+
+	const lines: Array<string> = [];
+	const groupEntries = Array.from(grouped.entries());
+	for (let gi = 0; gi < groupEntries.length; gi++) {
+		const [group, entries] = groupEntries[gi];
+		const isLastGroup = gi === groupEntries.length - 1;
+		const groupPrefix = isLastGroup ? '└── ' : '├── ';
+		const childIndent = isLastGroup ? '    ' : '│   ';
+		lines.push(`${groupPrefix}${group}/`);
+		for (let ei = 0; ei < entries.length; ei++) {
+			const entry = entries[ei];
+			const isLastEntry = ei === entries.length - 1;
+			const entryPrefix = isLastEntry ? '└── ' : '├── ';
+			lines.push(`${childIndent}${entryPrefix}${entry.dirName} "${entry.name}"`);
+		}
+	}
+	return lines;
+};
+
 export const installCmd = cli.Command.make(
 	'i',
 	{ sure: sureOption, filter: filterOption },
 	(args) =>
 		Effect.gen(function* () {
 			const ctx = yield* detectContext;
+			const path = yield* Path.Path;
 			const filters = Array.from(args.filter);
 
 			// --filter provided: run install with those filters
@@ -264,18 +298,18 @@ export const installCmd = cli.Command.make(
 			if (ctx.hasWorkspaces && !args.sure) {
 				const packages = yield* listWorkspacePackages(ctx.lockDir, ctx.pm);
 				yield* Console.log(
-					'You are at the monorepo root. This will install ALL packages.',
+					'[WARNING] You are at the monorepo root. This will install ALL packages.',
 				);
 				yield* Console.log('');
 				if (packages.length > 0) {
 					yield* Console.log('Workspace packages:');
-					for (const name of packages) {
-						yield* Console.log(`  - ${name}`);
+					for (const line of formatWorkspaceTree(packages, path.sep)) {
+						yield* Console.log(line);
 					}
 					yield* Console.log('');
 				}
 				yield* Console.log('To install a specific package:');
-				yield* Console.log('  pm i -F <package-name>... (note: The "..." is recommended to include all sub-dependencies)');
+				yield* Console.log('  pm i -F <package-name>... (note: the trailing "..." meant to include all sub-dependencies)');
 				yield* Console.log('');
 				yield* Console.log('To install everything:');
 				yield* Console.log(`  pm i --sure`);
