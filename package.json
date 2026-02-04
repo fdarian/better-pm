@@ -9,9 +9,11 @@
 		"#src/*": "./src/*"
 	},
 	"scripts": {
+		"format": "biome check --write",
 		"check:tsc": "tsgo --noEmit"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^2.3.14",
 		"@effect/cli": "^0.73.1",
 		"@effect/platform": "^0.94.2",
 		"@effect/platform-bun": "^0.87.1",
