@@ -21,7 +21,7 @@
 		"format": "biome check --write",
 		"check:tsc": "tsgo --noEmit",
 		"build": "bun scripts/build-npm.ts",
-		"ci:version": "bunx changeset version && bun scripts/sync-versions.ts",
+		"ci:version": "bunx changeset version && bun scripts/sync-versions.ts && bun install --lockfile-only",
 		"ci:release": "bun run build && bun scripts/publish-npm.ts"
 	},
 	"optionalDependencies": {
