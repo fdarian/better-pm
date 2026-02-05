@@ -8,7 +8,7 @@ export class NoPackageManagerDetectedError extends Data.TaggedError(
 	constructor() {
 		super({
 			message:
-				'No lock file found. Could not detect package manager (pnpm or bun).',
+				'No lock file found. Could not detect package manager (pnpm, bun, or npm).',
 		});
 	}
 }

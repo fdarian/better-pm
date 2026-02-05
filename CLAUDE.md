@@ -1,6 +1,6 @@
 # pm
 
-Standalone CLI for package manager operations in monorepos.
+Standalone CLI for package manager operations in monorepos. Supports pnpm, bun, and npm.
 
 ## Structure
 
@@ -17,6 +17,9 @@ Standalone CLI for package manager operations in monorepos.
   - From monorepo root: warns and lists packages, requires `--sure` or `-F <name>`
   - `--filter <name>` / `-F <name>` — target specific workspace packages (repeatable)
   - `--sure` — confirm full monorepo install from root
+- `pm add <packages...>` — Add packages
+  - `-D` — add as dev dependency
+- `pm remove <packages...>` — Remove packages
 
 ## Deployment
 
