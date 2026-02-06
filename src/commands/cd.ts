@@ -1,9 +1,9 @@
 import * as cli from '@effect/cli';
 import { Path } from '@effect/platform';
 import { Console, Effect, Option } from 'effect';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { PackageNotFoundError } from '#src/lib/errors.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 const packageNameArg = cli.Args.text({ name: 'package-name' }).pipe(
 	cli.Args.optional,
@@ -23,9 +23,9 @@ export const cdCmd = cli.Command.make(
 			const packages = yield* pm.listWorkspacePackages(pm.lockDir);
 
 			if (args.completions) {
-				for (const pkg of packages) {
-					yield* Console.log(pkg.name);
-				}
+				yield* Effect.forEach(packages, (pkg) => Console.log(pkg.name), {
+					concurrency: 'unbounded',
+				});
 				return;
 			}
 
