@@ -117,58 +117,69 @@ const formatWorkspaceTree = (
 	return lines;
 };
 
+const installHandler = (args: {
+	sure: boolean;
+	filter: ReadonlyArray<string>;
+}) =>
+	Effect.gen(function* () {
+		const pm = yield* PackageManagerService;
+		const ctx = yield* detectContext;
+		const path = yield* Path.Path;
+		const filters = Array.from(args.filter);
+
+		if (filters.length > 0) {
+			const cmd = pm.buildFilteredInstallCommand(filters);
+			yield* Console.log(
+				`Running: ${pm.name} install with filters: ${filters.join(', ')}`,
+			);
+			yield* runShellCommand(cmd);
+			return;
+		}
+
+		if (ctx.type === 'package') {
+			const cmd = pm.buildFilteredInstallCommand([ctx.packageName]);
+			yield* Console.log(
+				`Running: ${pm.name} install filtered to ${ctx.packageName}`,
+			);
+			yield* runShellCommand(cmd);
+			return;
+		}
+
+		if (ctx.hasWorkspaces && !args.sure) {
+			const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
+			yield* Console.log(
+				'[WARNING] You are at the monorepo root. This will install ALL packages.',
+			);
+			yield* Console.log('');
+			if (packages.length > 0) {
+				yield* Console.log('Workspace packages:');
+				for (const line of formatWorkspaceTree(packages, path.sep)) {
+					yield* Console.log(line);
+				}
+				yield* Console.log('');
+			}
+			yield* Console.log('To install a specific package:');
+			yield* Console.log(
+				'  pm i -F <package-name>... (note: the trailing "..." meant to include all sub-dependencies)',
+			);
+			yield* Console.log('');
+			yield* Console.log('To install everything:');
+			yield* Console.log(`  pm i --sure`);
+			return;
+		}
+
+		yield* Console.log(`Running: ${pm.name} install`);
+		yield* runShellCommand(pm.buildInstallCommand());
+	});
+
 export const installCmd = cli.Command.make(
 	'i',
 	{ sure: sureOption, filter: filterOption },
-	(args) =>
-		Effect.gen(function* () {
-			const pm = yield* PackageManagerService;
-			const ctx = yield* detectContext;
-			const path = yield* Path.Path;
-			const filters = Array.from(args.filter);
+	installHandler,
+);
 
-			if (filters.length > 0) {
-				const cmd = pm.buildFilteredInstallCommand(filters);
-				yield* Console.log(
-					`Running: ${pm.name} install with filters: ${filters.join(', ')}`,
-				);
-				yield* runShellCommand(cmd);
-				return;
-			}
-
-			if (ctx.type === 'package') {
-				const cmd = pm.buildFilteredInstallCommand([ctx.packageName]);
-				yield* Console.log(
-					`Running: ${pm.name} install filtered to ${ctx.packageName}`,
-				);
-				yield* runShellCommand(cmd);
-				return;
-			}
-
-			if (ctx.hasWorkspaces && !args.sure) {
-				const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
-				yield* Console.log(
-					'[WARNING] You are at the monorepo root. This will install ALL packages.',
-				);
-				yield* Console.log('');
-				if (packages.length > 0) {
-					yield* Console.log('Workspace packages:');
-					for (const line of formatWorkspaceTree(packages, path.sep)) {
-						yield* Console.log(line);
-					}
-					yield* Console.log('');
-				}
-				yield* Console.log('To install a specific package:');
-				yield* Console.log(
-					'  pm i -F <package-name>... (note: the trailing "..." meant to include all sub-dependencies)',
-				);
-				yield* Console.log('');
-				yield* Console.log('To install everything:');
-				yield* Console.log(`  pm i --sure`);
-				return;
-			}
-
-			yield* Console.log(`Running: ${pm.name} install`);
-			yield* runShellCommand(pm.buildInstallCommand());
-		}),
+export const installFullCmd = cli.Command.make(
+	'install',
+	{ sure: sureOption, filter: filterOption },
+	installHandler,
 );
