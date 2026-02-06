@@ -32,7 +32,7 @@ export const bunPackageManager = {
 	buildFilteredInstallCommand: (filters: Array<string>) => {
 		const args: Array<string> = ['install'];
 		for (const f of filters) {
-			args.push('--filter', `${f}...`);
+			args.push('--filter', f);
 		}
 		return ShellCommand.make('bun', ...args);
 	},

@@ -30,7 +30,7 @@ export const pnpmPackageManager = {
 	buildFilteredInstallCommand: (filters: Array<string>) => {
 		const args: Array<string> = [];
 		for (const f of filters) {
-			args.push('-F', `${f}...`);
+			args.push('-F', f);
 		}
 		args.push('install');
 		return ShellCommand.make('pnpm', ...args);
