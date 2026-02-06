@@ -1,13 +1,12 @@
 import * as cli from '@effect/cli';
 import { FileSystem, Path } from '@effect/platform';
 import { Console, Effect, Schema } from 'effect';
+import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { detectPackageManager } from '#src/pm/detect.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { findUpward } from '#src/project/find-upward.ts';
-import { runShellCommand } from '#src/commands/run-shell-command.ts';
 
 type MonorepoContext =
-
 	| {
 			type: 'root';
 			lockDir: string;
@@ -110,7 +109,9 @@ const formatWorkspaceTree = (
 			const entry = entries[ei];
 			const isLastEntry = ei === entries.length - 1;
 			const entryPrefix = isLastEntry ? '└── ' : '├── ';
-			lines.push(`${childIndent}${entryPrefix}${entry.dirName} "${entry.name}"`);
+			lines.push(
+				`${childIndent}${entryPrefix}${entry.dirName} "${entry.name}"`,
+			);
 		}
 	}
 	return lines;
@@ -158,7 +159,9 @@ export const installCmd = cli.Command.make(
 					yield* Console.log('');
 				}
 				yield* Console.log('To install a specific package:');
-				yield* Console.log('  pm i -F <package-name>  (append "..." to include sub-dependencies)');
+				yield* Console.log(
+					'  pm i -F <package-name>... (note: the trailing "..." meant to include all sub-dependencies)',
+				);
 				yield* Console.log('');
 				yield* Console.log('To install everything:');
 				yield* Console.log(`  pm i --sure`);
