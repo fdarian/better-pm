@@ -10,20 +10,20 @@ export const activateCmd = cli.Command.make(
 		Effect.gen(function* () {
 			yield* Console.log(`pm() {
   if [ "$1" = "cd" ]; then
-    shift
+    shift;
     if [ $# -eq 0 ]; then
-      command pm cd
-      return
-    fi
-    local dir
-    dir=$(command pm cd "$@")
+      command pm cd;
+      return;
+    fi;
+    local dir;
+    dir=$(command pm cd "$@");
     if [ $? -eq 0 ] && [ -n "$dir" ]; then
-      builtin cd "$dir"
-    fi
+      builtin cd "$dir";
+    fi;
   else
-    command pm "$@"
-  fi
-}
+    command pm "$@";
+  fi;
+};
 
 eval "$(command pm --completions ${args.shell})"`);
 		}),
