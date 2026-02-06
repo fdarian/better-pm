@@ -102,7 +102,7 @@ const installHandler = (args: {
 		}
 
 		if (ctx.type === 'package') {
-			const cmd = pm.buildFilteredInstallCommand([ctx.packageName]);
+			const cmd = pm.buildFilteredInstallCommand([`${ctx.packageName}...`]);
 			yield* Console.log(
 				`Running ${pm.name} install filtered to ${ctx.packageName} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
