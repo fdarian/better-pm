@@ -5,21 +5,19 @@ Standalone CLI for package manager operations in monorepos. Supports pnpm, bun, 
 ## Structure
 
 - `entries/cli.ts` — Effect CLI bootstrap
-- `src/commands/install.ts` — Core install logic with monorepo-root safety
-- `src/pm/` — Package manager abstraction (Context.Tag service, pnpm/bun implementations, detection)
+- `src/commands/` — Command implementations (install, add, remove, ls, cd, activate)
+- `src/pm/` — Package manager abstraction (pnpm/bun/npm implementations, detection)
 - `src/project/find-upward.ts` — Upward file traversal utility
 - `src/lib/errors.ts` — Tagged errors
 
 ## Commands
 
-- `pm i` — Install with monorepo awareness
-  - From package dir: auto-filters to current package
-  - From monorepo root: warns and lists packages, requires `--sure` or `-F <name>`
-  - `--filter <name>` / `-F <name>` — target specific workspace packages (repeatable)
-  - `--sure` — confirm full monorepo install from root
-- `pm add <packages...>` — Add packages
-  - `-D` — add as dev dependency
+- `pm i` — Install with monorepo awareness (auto-filters in package dir, warns at root)
+- `pm add <packages...>` — Add packages (`-D` for dev)
 - `pm remove <packages...>` — Remove packages
+- `pm ls` — List workspace packages as tree
+- `pm cd [package-name]` — Print package dir; shell wrapper via `activate` enables actual cd
+- `pm activate <shell>` — Output shell wrapper + completions (zsh/bash)
 
 ## Deployment
 
