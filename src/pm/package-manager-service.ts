@@ -6,6 +6,7 @@ import { Context, Effect, Schema } from 'effect';
 export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	PackageManagerService,
 	{
+		readonly lockDir: string;
 		readonly name: string;
 		readonly detectHasWorkspaces: (
 			lockDir: string,

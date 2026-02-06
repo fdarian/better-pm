@@ -7,7 +7,7 @@ import { npmPackageManager } from '#src/pm/npm.ts';
 import { pnpmPackageManager } from '#src/pm/pnpm.ts';
 import { findUpward } from '#src/project/find-upward.ts';
 
-const LOCK_FILES: Array<{ file: string; implementation: (typeof PackageManagerService)['Service'] }> = [
+const LOCK_FILES: Array<{ file: string; implementation: Omit<(typeof PackageManagerService)['Service'], 'lockDir'> }> = [
 	{ file: 'pnpm-lock.yaml', implementation: pnpmPackageManager },
 	{ file: 'bun.lock', implementation: bunPackageManager },
 	{ file: 'bun.lockb', implementation: bunPackageManager },
@@ -18,15 +18,10 @@ export const detectPackageManager = Effect.gen(function* () {
 	const path = yield* Path.Path;
 
 	for (const lockFile of LOCK_FILES) {
-		const result = yield* findUpward(lockFile.file).pipe(
-			Effect.map((lockPath) => ({
-				lockDir: path.dirname(lockPath),
-				implementation: lockFile.implementation,
-			})),
-			Effect.option,
-		);
+		const result = yield* findUpward(lockFile.file).pipe(Effect.option);
 		if (result._tag === 'Some') {
-			return result.value;
+			const lockDir = path.dirname(result.value);
+			return { ...lockFile.implementation, lockDir };
 		}
 	}
 	return yield* Effect.fail(new NoPackageManagerDetectedError());

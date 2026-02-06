@@ -6,10 +6,7 @@ import { detectPackageManager } from '#src/pm/detect.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import pkg from '../package.json' with { type: 'json' };
 
-const PackageManagerLayer = Layer.effect(
-	PackageManagerService,
-	Effect.map(detectPackageManager, (result) => result.implementation),
-);
+const PackageManagerLayer = Layer.effect(PackageManagerService, detectPackageManager);
 
 export const cli = Command.run(pmCmd, {
 	name: 'pm',
