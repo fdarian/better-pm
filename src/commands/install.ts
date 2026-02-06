@@ -1,6 +1,7 @@
 import * as cli from '@effect/cli';
-import { FileSystem, Path } from '@effect/platform';
+import { type Command, FileSystem, Path } from '@effect/platform';
 import { Console, Effect, Schema } from 'effect';
+import pc from 'picocolors';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { detectPackageManager } from '#src/pm/detect.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
@@ -130,7 +131,7 @@ const installHandler = (args: {
 		if (filters.length > 0) {
 			const cmd = pm.buildFilteredInstallCommand(filters);
 			yield* Console.log(
-				`Running: ${pm.name} install with filters: ${filters.join(', ')}`,
+				`Running: ${pm.name} install with filters: ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
 			yield* runShellCommand(cmd);
 			return;
@@ -139,7 +140,7 @@ const installHandler = (args: {
 		if (ctx.type === 'package') {
 			const cmd = pm.buildFilteredInstallCommand([ctx.packageName]);
 			yield* Console.log(
-				`Running: ${pm.name} install filtered to ${ctx.packageName}`,
+				`Running ${pm.name} install filtered to ${ctx.packageName} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
 			yield* runShellCommand(cmd);
 			return;
@@ -168,8 +169,11 @@ const installHandler = (args: {
 			return;
 		}
 
-		yield* Console.log(`Running: ${pm.name} install`);
-		yield* runShellCommand(pm.buildInstallCommand());
+		const cmd = pm.buildInstallCommand();
+		yield* Console.log(
+			`Running ${pm.name} install (cmd: ${pc.gray(renderCommand(cmd))})`,
+		);
+		yield* runShellCommand(cmd);
 	});
 
 export const installCmd = cli.Command.make(
@@ -183,3 +187,19 @@ export const installFullCmd = cli.Command.make(
 	{ sure: sureOption, filter: filterOption },
 	installHandler,
 );
+
+// Minimal quoting helper (POSIX-ish; adjust for Windows / your needs)
+const shQuote = (s: string) =>
+	/^[A-Za-z0-9_./-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`;
+
+function renderCommand(cmd: Command.Command): string {
+	// Turn it into a plain JSON-ish object using the representation
+	const j = JSON.parse(JSON.stringify(cmd)) as any;
+
+	// Inspect the shape once in your project and adapt these field names:
+	// common shapes are like { command: "ls", args: ["-al"] } or similar.
+	const bin: string = j.command ?? j.name ?? j.process ?? '<unknown>';
+	const args: string[] = j.args ?? j.arguments ?? [];
+
+	return [bin, ...args].map(shQuote).join(' ');
+}

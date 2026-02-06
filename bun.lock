@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "@neo/pm",
+      "dependencies": {
+        "picocolors": "^1.1.1",
+      },
       "devDependencies": {
         "@biomejs/biome": "^2.3.14",
         "@changesets/cli": "^2.29.8",

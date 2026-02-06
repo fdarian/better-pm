@@ -40,5 +40,8 @@
 		"@typescript/native-preview": "^7.0.0-dev.20260130.1",
 		"effect": "^3.19.15",
 		"typescript": "latest"
+	},
+	"dependencies": {
+		"picocolors": "^1.1.1"
 	}
 }
