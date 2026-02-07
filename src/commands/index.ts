@@ -10,6 +10,7 @@ import { runCmd } from './run.ts';
 import { upCmd, updateCmd } from './up.ts';
 import { whyCmd } from './why.ts';
 import { xCmd } from './x.ts';
+import { unlinkCmd } from './unlink.ts';
 
 export const pmCmd = Command.make('pm').pipe(
 	Command.withSubcommands([
@@ -20,6 +21,7 @@ export const pmCmd = Command.make('pm').pipe(
 		runCmd,
 		whyCmd,
 		linkCmd,
+		unlinkCmd,
 		cdCmd,
 		plsCmd,
 		activateCmd,
