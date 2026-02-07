@@ -5,6 +5,7 @@ import { cdCmd } from './cd.ts';
 import { installCmd, installFullCmd } from './install.ts';
 import { plsCmd } from './pls.ts';
 import { removeCmd } from './remove.ts';
+import { runCmd } from './run.ts';
 import { whyCmd } from './why.ts';
 
 export const pmCmd = Command.make('pm').pipe(
@@ -13,6 +14,7 @@ export const pmCmd = Command.make('pm').pipe(
 		installFullCmd,
 		addCmd,
 		removeCmd,
+		runCmd,
 		whyCmd,
 		cdCmd,
 		plsCmd,
