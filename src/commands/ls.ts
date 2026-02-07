@@ -2,6 +2,7 @@ import * as cli from '@effect/cli';
 import { Path } from '@effect/platform';
 import { Console, Effect } from 'effect';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 
 export const lsCmd = cli.Command.make('ls', {}, () =>
@@ -12,5 +13,5 @@ export const lsCmd = cli.Command.make('ls', {}, () =>
 		for (const line of formatWorkspaceTree(packages, path.sep)) {
 			yield* Console.log(line);
 		}
-	}),
+	}).pipe(Effect.provide(PackageManagerLayer)),
 );

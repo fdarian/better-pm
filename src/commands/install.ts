@@ -4,6 +4,7 @@ import { Console, Effect, Schema } from 'effect';
 import pc from 'picocolors';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { findUpward } from '#src/project/find-upward.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 
@@ -138,7 +139,7 @@ const installHandler = (args: {
 			`Running ${pm.name} install (cmd: ${pc.gray(renderCommand(cmd))})`,
 		);
 		yield* runShellCommand(cmd);
-	});
+	}).pipe(Effect.provide(PackageManagerLayer));
 
 export const installCmd = cli.Command.make(
 	'i',
