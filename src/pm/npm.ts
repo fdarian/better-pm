@@ -1,6 +1,6 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
-import { enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
+import { collectWorkspaceDependencies, enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
 
 const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(Schema.Array(Schema.String)),
@@ -44,4 +44,9 @@ export const npmPackageManager = {
 	},
 	buildRemoveCommand: (packages: Array<string>) =>
 		ShellCommand.make('npm', 'uninstall', ...packages),
+	resolveInstallFilters: (lockDir: string, packageName: string) =>
+		Effect.gen(function* () {
+			const allPackages = yield* npmPackageManager.listWorkspacePackages(lockDir);
+			return yield* collectWorkspaceDependencies(lockDir, packageName, allPackages);
+		}),
 };

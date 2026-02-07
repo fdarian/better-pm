@@ -22,6 +22,10 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 		readonly buildFilteredInstallCommand: (filters: Array<string>) => ShellCommand.Command;
 		readonly buildAddCommand: (packages: Array<string>, dev: boolean) => ShellCommand.Command;
 		readonly buildRemoveCommand: (packages: Array<string>) => ShellCommand.Command;
+		readonly resolveInstallFilters: (
+			lockDir: string,
+			packageName: string,
+		) => Effect.Effect<Array<string>, PlatformError | ParseError, FileSystem.FileSystem | Path.Path>;
 	}
 >() {}
 
@@ -77,4 +81,44 @@ export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray
 
 		const results = yield* Effect.all(tasks, { concurrency: 'unbounded' });
 		return results.flat();
+	});
+
+const PackageJsonWithDeps = Schema.Struct({
+	dependencies: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+	devDependencies: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+});
+
+export const collectWorkspaceDependencies = (
+	lockDir: string,
+	packageName: string,
+	allPackages: Array<{ name: string; relDir: string }>,
+) =>
+	Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const path = yield* Path.Path;
+
+		const packagesByName = new Map(allPackages.map((p) => [p.name, p.relDir]));
+		const collected = new Set<string>();
+
+		const resolve = (name: string): Effect.Effect<void, PlatformError | ParseError, FileSystem.FileSystem | Path.Path> =>
+			Effect.gen(function* () {
+				if (collected.has(name)) return;
+				const relDir = packagesByName.get(name);
+				if (relDir === undefined) return;
+				collected.add(name);
+
+				const pkgJsonPath = path.join(lockDir, relDir, 'package.json');
+				const content = yield* fs.readFileString(pkgJsonPath);
+				const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithDeps))(content);
+
+				const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+				for (const [depName, version] of Object.entries(allDeps)) {
+					if (version.startsWith('workspace:')) {
+						yield* resolve(depName);
+					}
+				}
+			});
+
+		yield* resolve(packageName);
+		return Array.from(collected);
 	});

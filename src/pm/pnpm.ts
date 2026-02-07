@@ -43,4 +43,6 @@ export const pnpmPackageManager = {
 	},
 	buildRemoveCommand: (packages: Array<string>) =>
 		ShellCommand.make('pnpm', 'remove', ...packages),
+	resolveInstallFilters: (_lockDir: string, packageName: string) =>
+		Effect.succeed([`${packageName}...`]),
 };

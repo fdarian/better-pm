@@ -1,6 +1,6 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
-import { enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
+import { collectWorkspaceDependencies, enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
 
 const WorkspacesField = Schema.Union(
 	Schema.Array(Schema.String),
@@ -53,4 +53,9 @@ export const bunPackageManager = {
 	},
 	buildRemoveCommand: (packages: Array<string>) =>
 		ShellCommand.make('bun', 'remove', ...packages),
+	resolveInstallFilters: (lockDir: string, packageName: string) =>
+		Effect.gen(function* () {
+			const allPackages = yield* bunPackageManager.listWorkspacePackages(lockDir);
+			return yield* collectWorkspaceDependencies(lockDir, packageName, allPackages);
+		}),
 };

@@ -103,9 +103,10 @@ const installHandler = (args: {
 		}
 
 		if (ctx.type === 'package') {
-			const cmd = pm.buildFilteredInstallCommand([`${ctx.packageName}...`]);
+			const filters = yield* pm.resolveInstallFilters(ctx.lockDir, ctx.packageName);
+			const cmd = pm.buildFilteredInstallCommand(filters);
 			yield* Console.log(
-				`Running ${pm.name} install filtered to ${ctx.packageName} (cmd: ${pc.gray(renderCommand(cmd))})`,
+				`Running ${pm.name} install filtered to ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
 			yield* runShellCommand(cmd);
 			return;
@@ -125,9 +126,7 @@ const installHandler = (args: {
 				yield* Console.log('');
 			}
 			yield* Console.log('To install a specific package:');
-			yield* Console.log(
-				'  pm i -F <package-name>... (note: the trailing "..." meant to include all sub-dependencies)',
-			);
+			yield* Console.log(`  pm i -F <package-name>`);
 			yield* Console.log('');
 			yield* Console.log('To install everything:');
 			yield* Console.log(`  pm i --sure`);
