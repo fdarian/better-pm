@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.3.1
+
+### Patch Changes
+
+- 2314dfd: Resolve workspace dependencies recursively for bun/npm install filters
+
 ## 0.3.0
 
 ### Minor Changes

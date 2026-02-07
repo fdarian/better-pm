@@ -1,6 +1,6 @@
 {
 	"name": "better-pm",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Better CLI for package manager operations (especially in monorepos)",
 	"type": "module",
 	"license": "MIT",
@@ -25,10 +25,10 @@
 		"ci:release": "bun run build && bun scripts/publish-npm.ts"
 	},
 	"optionalDependencies": {
-		"better-pm-darwin-arm64": "0.3.0",
-		"better-pm-darwin-x64": "0.3.0",
-		"better-pm-linux-x64": "0.3.0",
-		"better-pm-linux-arm64": "0.3.0"
+		"better-pm-darwin-arm64": "0.3.1",
+		"better-pm-darwin-x64": "0.3.1",
+		"better-pm-linux-x64": "0.3.1",
+		"better-pm-linux-arm64": "0.3.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.14",
