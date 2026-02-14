@@ -6,9 +6,11 @@ const shellArg = cli.Args.text({ name: 'shell' });
 const shellWrapper = `pm() {
   if [ "$1" = "cd" ]; then
     shift;
-    case "$1" in
-      -*) command pm cd "$@"; return;;
-    esac;
+    for arg in "$@"; do
+      case "$arg" in
+        -*) command pm cd "$@"; return;;
+      esac;
+    done;
     local dir;
     dir=$(command pm cd "$@");
     if [ $? -eq 0 ] && [ -d "$dir" ]; then
