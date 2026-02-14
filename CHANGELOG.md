@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.3.2
+
+### Patch Changes
+
+- d031d47: Add `--path` / `-p` flag to `pm cd` for printing the package directory path without the shell wrapper
+
 ## 0.3.1
 
 ### Patch Changes
