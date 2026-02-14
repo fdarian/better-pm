@@ -14,9 +14,14 @@ const completionsOption = cli.Options.boolean('completions').pipe(
 	cli.Options.withDefault(false),
 );
 
+const pathOption = cli.Options.boolean('path').pipe(
+	cli.Options.withAlias('p'),
+	cli.Options.withDefault(false),
+);
+
 export const cdCmd = cli.Command.make(
 	'cd',
-	{ packageName: packageNameArg, completions: completionsOption },
+	{ packageName: packageNameArg, completions: completionsOption, path: pathOption },
 	(args) =>
 		Effect.gen(function* () {
 			const pm = yield* PackageManagerService;
