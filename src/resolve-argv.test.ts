@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { resolveArgv } from './resolve-argv.ts';
 
 const knownCommands = new Set(['i', 'install', 'add', 'remove', 'run', 'ls']);
