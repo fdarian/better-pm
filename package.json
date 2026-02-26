@@ -23,7 +23,7 @@
 		"build": "bun scripts/build-npm.ts",
 		"ci:version": "bunx changeset version && bun scripts/sync-versions.ts && bun install --lockfile-only",
 		"ci:release": "bun run build && bun scripts/publish-npm.ts",
-		"test": "vitest"
+		"test": "vitest run"
 	},
 	"optionalDependencies": {
 		"better-pm-darwin-arm64": "0.3.2",

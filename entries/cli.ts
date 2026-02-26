@@ -1,7 +1,8 @@
 import { Command } from '@effect/cli';
 import { BunContext, BunRuntime } from '@effect/platform-bun';
-import { Effect } from 'effect';
+import { Effect, HashMap } from 'effect';
 import { pmCmd } from '#src/commands/index.ts';
+import { resolveArgv } from '#src/resolve-argv.ts';
 import pkg from '../package.json' with { type: 'json' };
 
 export const cli = Command.run(pmCmd, {
@@ -9,7 +10,9 @@ export const cli = Command.run(pmCmd, {
 	version: pkg.version,
 });
 
-cli(process.argv).pipe(
+const knownCommands = new Set(HashMap.keys(Command.getSubcommands(pmCmd)));
+
+cli(resolveArgv(process.argv, knownCommands)).pipe(
 	Effect.provide(BunContext.layer),
 	BunRuntime.runMain,
 );
