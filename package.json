@@ -22,7 +22,8 @@
 		"check:tsc": "tsgo --noEmit",
 		"build": "bun scripts/build-npm.ts",
 		"ci:version": "bunx changeset version && bun scripts/sync-versions.ts && bun install --lockfile-only",
-		"ci:release": "bun run build && bun scripts/publish-npm.ts"
+		"ci:release": "bun run build && bun scripts/publish-npm.ts",
+		"test": "vitest"
 	},
 	"optionalDependencies": {
 		"better-pm-darwin-arm64": "0.3.2",
@@ -36,10 +37,12 @@
 		"@effect/cli": "^0.73.1",
 		"@effect/platform": "^0.94.2",
 		"@effect/platform-bun": "^0.87.1",
+		"@effect/vitest": "^0.27.0",
 		"@types/bun": "latest",
 		"@typescript/native-preview": "^7.0.0-dev.20260130.1",
 		"effect": "^3.19.15",
-		"typescript": "latest"
+		"typescript": "latest",
+		"vitest": "^4.0.18"
 	},
 	"dependencies": {
 		"picocolors": "^1.1.1"
