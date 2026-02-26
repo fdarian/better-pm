@@ -75,6 +75,7 @@ const detectContext = Effect.gen(function* () {
 });
 
 const sureOption = cli.Options.boolean('sure').pipe(
+	cli.Options.withAlias('y'),
 	cli.Options.withDefault(false),
 );
 
@@ -82,6 +83,40 @@ const filterOption = cli.Options.text('filter').pipe(
 	cli.Options.withAlias('F'),
 	cli.Options.repeated,
 );
+
+export const confirmRootInstall = (args: {
+	packages: Array<{ name: string; relDir: string }>;
+	pathSep: string;
+}) =>
+	Effect.gen(function* () {
+		yield* Console.log(
+			'[WARNING] You are at the monorepo root. This will install ALL packages.',
+		);
+		yield* Console.log('');
+		if (args.packages.length > 0) {
+			yield* Console.log('Workspace packages:');
+			for (const line of formatWorkspaceTree(args.packages, args.pathSep)) {
+				yield* Console.log(line);
+			}
+			yield* Console.log('');
+		}
+
+		if (process.env.CLAUDECODE === '1') {
+			yield* Console.log('To install a specific package:');
+			yield* Console.log('  pm i -F <package-name>');
+			yield* Console.log('');
+			yield* Console.log('To install everything:');
+			yield* Console.log('  pm i -y');
+			return false;
+		}
+
+		const confirmed = yield* cli.Prompt.confirm({
+			message: 'Proceed with installing all packages?',
+		}).pipe(
+			Effect.catchTag('QuitException', () => Effect.succeed(false)),
+		);
+		return confirmed;
+	});
 
 const installHandler = (args: {
 	sure: boolean;
@@ -114,23 +149,11 @@ const installHandler = (args: {
 
 		if (ctx.hasWorkspaces && !args.sure) {
 			const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
-			yield* Console.log(
-				'[WARNING] You are at the monorepo root. This will install ALL packages.',
-			);
-			yield* Console.log('');
-			if (packages.length > 0) {
-				yield* Console.log('Workspace packages:');
-				for (const line of formatWorkspaceTree(packages, path.sep)) {
-					yield* Console.log(line);
-				}
-				yield* Console.log('');
-			}
-			yield* Console.log('To install a specific package:');
-			yield* Console.log(`  pm i -F <package-name>`);
-			yield* Console.log('');
-			yield* Console.log('To install everything:');
-			yield* Console.log(`  pm i --sure`);
-			return;
+			const proceed = yield* confirmRootInstall({
+				packages,
+				pathSep: path.sep,
+			});
+			if (!proceed) return;
 		}
 
 		const cmd = pm.buildInstallCommand();
