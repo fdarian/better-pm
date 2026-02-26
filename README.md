@@ -72,6 +72,18 @@ To install everything:
   pm i --sure
 ```
 
+## Paste-friendly add
+
+Copied a command from a README? Just paste it:
+
+```bash
+pm add "npm install -D something"    # automatically extracts -D and the package
+pm add "pnpm add foo bar"            # works with any package manager command
+pm add "bun add -D @scope/pkg"       # scoped packages too
+```
+
+`pm` detects pasted `npm install`, `pnpm add`, `bun add` (and their shorthands like `npm i`) and extracts the packages and `-D` flag automatically.
+
 ## Workspace navigation
 
 List all workspace packages as a tree:
