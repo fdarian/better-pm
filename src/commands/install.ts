@@ -3,10 +3,10 @@ import { type Command, FileSystem, Path } from '@effect/platform';
 import { Console, Effect, Schema } from 'effect';
 import pc from 'picocolors';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
-import { PackageManagerLayer } from '#src/pm/layer.ts';
-import { findUpward } from '#src/project/find-upward.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
+import { findUpward } from '#src/project/find-upward.ts';
 
 type MonorepoContext =
 	| {
@@ -138,7 +138,10 @@ const installHandler = (args: {
 		}
 
 		if (ctx.type === 'package') {
-			const filters = yield* pm.resolveInstallFilters(ctx.lockDir, ctx.packageName);
+			const filters = yield* pm.resolveInstallFilters(
+				ctx.lockDir,
+				ctx.packageName,
+			);
 			const cmd = pm.buildFilteredInstallCommand(filters);
 			yield* Console.log(
 				`Running ${pm.name} install filtered to ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,

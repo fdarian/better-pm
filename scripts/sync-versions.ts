@@ -1,15 +1,18 @@
-import { join } from "path"
+import { join } from 'path';
 
-const repoRoot = join(import.meta.dir, "..")
+const repoRoot = join(import.meta.dir, '..');
 
-const packageJsonPath = join(repoRoot, "package.json")
-const packageJson = await Bun.file(packageJsonPath).json()
-const version = packageJson.version
+const packageJsonPath = join(repoRoot, 'package.json');
+const packageJson = await Bun.file(packageJsonPath).json();
+const version = packageJson.version;
 
 if (packageJson.optionalDependencies) {
 	for (const key in packageJson.optionalDependencies) {
-		packageJson.optionalDependencies[key] = version
+		packageJson.optionalDependencies[key] = version;
 	}
 }
 
-await Bun.write(packageJsonPath, JSON.stringify(packageJson, null, "\t") + "\n")
+await Bun.write(
+	packageJsonPath,
+	JSON.stringify(packageJson, null, '\t') + '\n',
+);

@@ -1,13 +1,16 @@
 import { Path } from '@effect/platform';
 import { Effect } from 'effect';
 import { NoPackageManagerDetectedError } from '#src/lib/errors.ts';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { bunPackageManager } from '#src/pm/bun.ts';
 import { npmPackageManager } from '#src/pm/npm.ts';
+import type { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { pnpmPackageManager } from '#src/pm/pnpm.ts';
 import { findUpward } from '#src/project/find-upward.ts';
 
-const LOCK_FILES: Array<{ file: string; implementation: Omit<(typeof PackageManagerService)['Service'], 'lockDir'> }> = [
+const LOCK_FILES: Array<{
+	file: string;
+	implementation: Omit<(typeof PackageManagerService)['Service'], 'lockDir'>;
+}> = [
 	{ file: 'pnpm-lock.yaml', implementation: pnpmPackageManager },
 	{ file: 'bun.lock', implementation: bunPackageManager },
 	{ file: 'bun.lockb', implementation: bunPackageManager },

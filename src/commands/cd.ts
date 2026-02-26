@@ -3,8 +3,8 @@ import { Path } from '@effect/platform';
 import { Console, Effect, Option } from 'effect';
 import { PackageNotFoundError } from '#src/lib/errors.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 const packageNameArg = cli.Args.text({ name: 'package-name' }).pipe(
 	cli.Args.optional,

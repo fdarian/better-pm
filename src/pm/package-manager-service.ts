@@ -1,7 +1,11 @@
-import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
+import {
+	FileSystem,
+	Path,
+	type Command as ShellCommand,
+} from '@effect/platform';
 import type { PlatformError } from '@effect/platform/Error';
-import type { ParseError } from 'effect/ParseResult';
 import { Context, Effect, Schema } from 'effect';
+import type { ParseError } from 'effect/ParseResult';
 
 export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	PackageManagerService,
@@ -10,7 +14,11 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 		readonly name: string;
 		readonly detectHasWorkspaces: (
 			lockDir: string,
-		) => Effect.Effect<boolean, PlatformError | ParseError, FileSystem.FileSystem | Path.Path>;
+		) => Effect.Effect<
+			boolean,
+			PlatformError | ParseError,
+			FileSystem.FileSystem | Path.Path
+		>;
 		readonly listWorkspacePackages: (
 			lockDir: string,
 		) => Effect.Effect<
@@ -19,13 +27,24 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 			FileSystem.FileSystem | Path.Path
 		>;
 		readonly buildInstallCommand: () => ShellCommand.Command;
-		readonly buildFilteredInstallCommand: (filters: Array<string>) => ShellCommand.Command;
-		readonly buildAddCommand: (packages: Array<string>, dev: boolean) => ShellCommand.Command;
-		readonly buildRemoveCommand: (packages: Array<string>) => ShellCommand.Command;
+		readonly buildFilteredInstallCommand: (
+			filters: Array<string>,
+		) => ShellCommand.Command;
+		readonly buildAddCommand: (
+			packages: Array<string>,
+			dev: boolean,
+		) => ShellCommand.Command;
+		readonly buildRemoveCommand: (
+			packages: Array<string>,
+		) => ShellCommand.Command;
 		readonly resolveInstallFilters: (
 			lockDir: string,
 			packageName: string,
-		) => Effect.Effect<Array<string>, PlatformError | ParseError, FileSystem.FileSystem | Path.Path>;
+		) => Effect.Effect<
+			Array<string>,
+			PlatformError | ParseError,
+			FileSystem.FileSystem | Path.Path
+		>;
 	}
 >() {}
 
@@ -37,10 +56,15 @@ const readPackageName = (pkgJsonPath: string) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const content = yield* fs.readFileString(pkgJsonPath);
-		return yield* Schema.decode(Schema.parseJson(WorkspacePackageJson))(content);
+		return yield* Schema.decode(Schema.parseJson(WorkspacePackageJson))(
+			content,
+		);
 	}).pipe(Effect.option);
 
-export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray<string>) =>
+export const enumerateWorkspacePackages = (
+	lockDir: string,
+	globs: ReadonlyArray<string>,
+) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
@@ -60,10 +84,17 @@ export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray
 								const pkgJsonPath = path.join(fullBase, entry, 'package.json');
 								const decoded = yield* readPackageName(pkgJsonPath);
 								if (decoded._tag === 'None') return [];
-								return [{ name: decoded.value.name, relDir: path.join(baseDir, entry) }];
+								return [
+									{
+										name: decoded.value.name,
+										relDir: path.join(baseDir, entry),
+									},
+								];
 							}),
 						);
-						const results = yield* Effect.all(entryTasks, { concurrency: 'unbounded' });
+						const results = yield* Effect.all(entryTasks, {
+							concurrency: 'unbounded',
+						});
 						return results.flat();
 					}),
 				];
@@ -84,8 +115,12 @@ export const enumerateWorkspacePackages = (lockDir: string, globs: ReadonlyArray
 	});
 
 const PackageJsonWithDeps = Schema.Struct({
-	dependencies: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
-	devDependencies: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+	dependencies: Schema.optional(
+		Schema.Record({ key: Schema.String, value: Schema.String }),
+	),
+	devDependencies: Schema.optional(
+		Schema.Record({ key: Schema.String, value: Schema.String }),
+	),
 });
 
 export const collectWorkspaceDependencies = (
@@ -100,7 +135,13 @@ export const collectWorkspaceDependencies = (
 		const packagesByName = new Map(allPackages.map((p) => [p.name, p.relDir]));
 		const collected = new Set<string>();
 
-		const resolve = (name: string): Effect.Effect<void, PlatformError | ParseError, FileSystem.FileSystem | Path.Path> =>
+		const resolve = (
+			name: string,
+		): Effect.Effect<
+			void,
+			PlatformError | ParseError,
+			FileSystem.FileSystem | Path.Path
+		> =>
 			Effect.gen(function* () {
 				if (collected.has(name)) return;
 				const relDir = packagesByName.get(name);
@@ -109,7 +150,9 @@ export const collectWorkspaceDependencies = (
 
 				const pkgJsonPath = path.join(lockDir, relDir, 'package.json');
 				const content = yield* fs.readFileString(pkgJsonPath);
-				const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithDeps))(content);
+				const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithDeps))(
+					content,
+				);
 
 				const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 				for (const [depName, version] of Object.entries(allDeps)) {

@@ -1,9 +1,9 @@
 import * as cli from '@effect/cli';
 import { Path } from '@effect/platform';
 import { Console, Effect } from 'effect';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
-import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 export const plsCmd = cli.Command.make('pls', {}, () =>
 	Effect.gen(function* () {

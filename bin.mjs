@@ -1,35 +1,38 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
-import { platform, arch } from "node:os";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { resolve, dirname } from "node:path";
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { arch, platform } from 'node:os';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
 const require = createRequire(import.meta.url);
 
 function runSource() {
-  const entry = resolve(dirname(fileURLToPath(import.meta.url)), "entries/cli.ts");
-  try {
-    execFileSync("bun", [entry, ...args], { stdio: "inherit" });
-  } catch (e) {
-    process.exit(e.status ?? 1);
-  }
-  process.exit(0);
+	const entry = resolve(
+		dirname(fileURLToPath(import.meta.url)),
+		'entries/cli.ts',
+	);
+	try {
+		execFileSync('bun', [entry, ...args], { stdio: 'inherit' });
+	} catch (e) {
+		process.exit(e.status ?? 1);
+	}
+	process.exit(0);
 }
 
 let bin;
 try {
-  bin = require.resolve(`better-pm-${platform()}-${arch()}`);
+	bin = require.resolve(`better-pm-${platform()}-${arch()}`);
 } catch {
-  runSource();
+	runSource();
 }
 
 try {
-  execFileSync(bin, args, { stdio: "inherit" });
+	execFileSync(bin, args, { stdio: 'inherit' });
 } catch (e) {
-  if (e.status != null) {
-    process.exit(e.status);
-  }
-  runSource();
+	if (e.status != null) {
+		process.exit(e.status);
+	}
+	runSource();
 }
