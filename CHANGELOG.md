@@ -1,5 +1,13 @@
 # better-pm
 
+## 0.3.3
+
+### Patch Changes
+
+- 3cdcb90: Unknown CLI commands now automatically pass through as `pm run <script>`, eliminating the need to explicitly type `pm run` for package scripts
+- 6275e01: Auto-parse pasted package manager commands in `pm add`
+- ab53453: Add `-y` alias for `--sure` and interactive root install prompt
+
 ## 0.3.2
 
 ### Patch Changes
