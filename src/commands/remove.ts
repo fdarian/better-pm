@@ -1,8 +1,8 @@
 import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
-import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 const packagesArg = cli.Args.text({ name: 'packages' }).pipe(
 	cli.Args.atLeast(1),

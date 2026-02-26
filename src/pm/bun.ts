@@ -1,6 +1,9 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
-import { collectWorkspaceDependencies, enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
+import {
+	collectWorkspaceDependencies,
+	enumerateWorkspacePackages,
+} from '#src/pm/package-manager-service.ts';
 
 const WorkspacesField = Schema.Union(
 	Schema.Array(Schema.String),
@@ -25,15 +28,21 @@ export const bunPackageManager = {
 			const exists = yield* fs.exists(pkgPath);
 			if (!exists) return false;
 			const content = yield* fs.readFileString(pkgPath);
-			const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithWorkspaces))(content);
+			const pkg = yield* Schema.decode(
+				Schema.parseJson(PackageJsonWithWorkspaces),
+			)(content);
 			return pkg.workspaces !== undefined && pkg.workspaces.length > 0;
 		}),
 	listWorkspacePackages: (lockDir: string) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
 			const path = yield* Path.Path;
-			const content = yield* fs.readFileString(path.join(lockDir, 'package.json'));
-			const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithWorkspaces))(content);
+			const content = yield* fs.readFileString(
+				path.join(lockDir, 'package.json'),
+			);
+			const pkg = yield* Schema.decode(
+				Schema.parseJson(PackageJsonWithWorkspaces),
+			)(content);
 			const globs = pkg.workspaces ?? [];
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
@@ -55,7 +64,12 @@ export const bunPackageManager = {
 		ShellCommand.make('bun', 'remove', ...packages),
 	resolveInstallFilters: (lockDir: string, packageName: string) =>
 		Effect.gen(function* () {
-			const allPackages = yield* bunPackageManager.listWorkspacePackages(lockDir);
-			return yield* collectWorkspaceDependencies(lockDir, packageName, allPackages);
+			const allPackages =
+				yield* bunPackageManager.listWorkspacePackages(lockDir);
+			return yield* collectWorkspaceDependencies(
+				lockDir,
+				packageName,
+				allPackages,
+			);
 		}),
 };

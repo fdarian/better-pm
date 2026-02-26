@@ -1,9 +1,9 @@
 import * as cli from '@effect/cli';
 import { Command as ShellCommand } from '@effect/platform';
 import { Console, Effect } from 'effect';
-import { PackageManagerService } from '#src/pm/package-manager-service.ts';
-import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
+import { PackageManagerLayer } from '#src/pm/layer.ts';
+import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 const interactiveOption = cli.Options.boolean('i').pipe(
 	cli.Options.withDefault(false),

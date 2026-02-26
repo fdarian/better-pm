@@ -1,51 +1,51 @@
-import { join } from "node:path"
+import { join } from 'node:path';
 
-const repoRoot = join(import.meta.dir, "..")
+const repoRoot = join(import.meta.dir, '..');
 
-const platforms = ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"]
+const platforms = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'linux-arm64'];
 
 for (const platform of platforms) {
-	const packageDir = join(repoRoot, "npm", `better-pm-${platform}`)
-	const packageJsonPath = join(packageDir, "package.json")
-	const packageJson = await Bun.file(packageJsonPath).json()
-	const version = packageJson.version
+	const packageDir = join(repoRoot, 'npm', `better-pm-${platform}`);
+	const packageJsonPath = join(packageDir, 'package.json');
+	const packageJson = await Bun.file(packageJsonPath).json();
+	const version = packageJson.version;
 
 	const checkPublished = Bun.spawn(
-		["npm", "view", `better-pm-${platform}@${version}`, "version"],
+		['npm', 'view', `better-pm-${platform}@${version}`, 'version'],
 		{
-			stdout: "inherit",
-			stderr: "inherit",
-		}
-	)
+			stdout: 'inherit',
+			stderr: 'inherit',
+		},
+	);
 
-	const checkExitCode = await checkPublished.exited
+	const checkExitCode = await checkPublished.exited;
 
 	if (checkExitCode === 0) {
-		console.log(`better-pm-${platform}@${version} already published, skipping`)
-		continue
+		console.log(`better-pm-${platform}@${version} already published, skipping`);
+		continue;
 	}
 
-	const publish = Bun.spawn(["npm", "publish", "--access", "public"], {
+	const publish = Bun.spawn(['npm', 'publish', '--access', 'public'], {
 		cwd: packageDir,
-		stdout: "inherit",
-		stderr: "inherit",
-	})
+		stdout: 'inherit',
+		stderr: 'inherit',
+	});
 
-	const publishExitCode = await publish.exited
+	const publishExitCode = await publish.exited;
 
 	if (publishExitCode !== 0) {
-		throw new Error(`Failed to publish better-pm-${platform}`)
+		throw new Error(`Failed to publish better-pm-${platform}`);
 	}
 }
 
-const changesetPublish = Bun.spawn(["bunx", "changeset", "publish"], {
+const changesetPublish = Bun.spawn(['bunx', 'changeset', 'publish'], {
 	cwd: repoRoot,
-	stdout: "inherit",
-	stderr: "inherit",
-})
+	stdout: 'inherit',
+	stderr: 'inherit',
+});
 
-const changesetExitCode = await changesetPublish.exited
+const changesetExitCode = await changesetPublish.exited;
 
 if (changesetExitCode !== 0) {
-	throw new Error("Failed to run changeset publish")
+	throw new Error('Failed to run changeset publish');
 }
