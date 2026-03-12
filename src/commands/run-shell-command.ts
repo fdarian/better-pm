@@ -71,8 +71,18 @@ export const runShellCommand = (cmd: ShellCommand.Command) =>
 				shell: standard.shell,
 			});
 
+			if (child.pid === undefined) {
+				resume(
+					Effect.fail(
+						new Error(`Failed to spawn process: ${standard.command}`),
+					),
+				);
+				return;
+			}
+			const pid = child.pid;
+
 			const forwardSigint = () => {
-				const otherGroupPids = getOtherGroupDescendants(child.pid!);
+				const otherGroupPids = getOtherGroupDescendants(pid);
 				if (otherGroupPids.length > 0) {
 					for (const p of otherGroupPids) {
 						try {
@@ -81,7 +91,7 @@ export const runShellCommand = (cmd: ShellCommand.Command) =>
 					}
 				} else {
 					// No separate process groups — kill the tree directly
-					killTree(child.pid!, 'SIGTERM');
+					killTree(pid, 'SIGTERM');
 				}
 			};
 			process.on('SIGINT', forwardSigint);
@@ -96,7 +106,7 @@ export const runShellCommand = (cmd: ShellCommand.Command) =>
 			});
 			return Effect.sync(() => {
 				process.removeListener('SIGINT', forwardSigint);
-				killTree(child.pid!, 'SIGTERM');
+				killTree(pid, 'SIGTERM');
 			});
 		}),
 	);
