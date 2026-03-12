@@ -95,8 +95,11 @@ export const runShellCommand = (cmd: ShellCommand.Command) =>
 						} catch {}
 					}
 				} else {
-					// No separate process groups — kill the tree directly
-					killTree(pid, 'SIGTERM');
+					// All descendants share the child's process group (detached: true makes
+					// the child its own group leader). Sending SIGINT to the group (-pid) is
+					// equivalent to terminal Ctrl+C — it atomically signals every process in
+					// the group, unlike killTree which walks processes sequentially.
+					try { process.kill(-pid, 'SIGINT'); } catch {}
 				}
 			};
 			process.on('SIGINT', forwardSigint);
