@@ -4,6 +4,7 @@ A CLI for smarter package manager operations (especially in monorepos).
 
 - **Package manager agnostic** — works with pnpm and bun, no need to remember which one your project uses
 - **Scoped installs by default** — automatically installs only the current package, no more accidental full-monorepo installs
+- **Clean signal handling** — `Ctrl+C` properly shuts down the entire process tree, no orphaned dev servers
 - **Easy navigation** — jump to any workspace package from anywhere
 
 https://github.com/user-attachments/assets/3d5496a9-91be-47dc-9e01-db8c5052c7c5
@@ -41,6 +42,8 @@ pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
 pm ls                    List workspace packages as a tree
 pm cd <pkg>              cd into a workspace package
+pm run <script>           Run a package.json script
+pm <script>               Shorthand for pm run
 ```
 
 ## Monorepo-aware install
