@@ -3,8 +3,12 @@ import { execSync, spawn } from 'child_process';
 import { Effect, HashMap, Option } from 'effect';
 
 function getDescendantPids(pid: number): number[] {
+	if (process.platform === 'win32') return [];
 	try {
-		const children = execSync(`pgrep -P ${pid}`, { encoding: 'utf-8' })
+		const children = execSync(`pgrep -P ${pid}`, {
+			encoding: 'utf-8',
+			timeout: 3000,
+		})
 			.trim()
 			.split('\n')
 			.filter(Boolean)
@@ -26,13 +30,14 @@ function killTree(pid: number, signal: NodeJS.Signals) {
 
 /** Finds descendant PIDs that are in a different process group than the root */
 function getOtherGroupDescendants(rootPid: number): number[] {
+	if (process.platform === 'win32') return [];
 	const descendants = getDescendantPids(rootPid);
 	if (descendants.length === 0) return [];
 	try {
 		const allPids = [rootPid, ...descendants];
 		const output = execSync(
 			`ps -o pid=,pgid= -p ${allPids.join(',')}`,
-			{ encoding: 'utf-8' },
+			{ encoding: 'utf-8', timeout: 3000 },
 		);
 		const rootPgid = rootPid; // detached child is its own process group leader
 		return output
