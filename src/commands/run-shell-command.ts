@@ -27,18 +27,23 @@ function killTree(pid: number, signal: NodeJS.Signals) {
 /**
  * Spawns with detached: true so only pm receives terminal SIGINT,
  * then forwards the signal to the entire child process tree.
- * This handles multi-level trees where descendants create their own process groups.
+ * Pipes stdout/stderr so we can suppress shutdown noise (e.g. pnpm ELIFECYCLE).
  */
 export const runShellCommand = (cmd: ShellCommand.Command) =>
 	Effect.async<number, Error>((resume) => {
 		const standard = cmd as ShellCommand.StandardCommand;
 		const child = spawn(standard.command, standard.args as string[], {
-			stdio: 'inherit',
+			stdio: ['inherit', 'pipe', 'pipe'],
 			detached: true,
 		});
 
+		child.stdout!.pipe(process.stdout);
+		child.stderr!.pipe(process.stderr);
+
 		const forwardSigint = () => {
-			killTree(child.pid!, 'SIGINT');
+			child.stdout!.unpipe(process.stdout);
+			child.stderr!.unpipe(process.stderr);
+			killTree(child.pid!, 'SIGTERM');
 		};
 		process.on('SIGINT', forwardSigint);
 
