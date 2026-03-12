@@ -1,6 +1,6 @@
 import { Command as ShellCommand } from '@effect/platform';
 import { execSync, spawn } from 'child_process';
-import { Effect } from 'effect';
+import { Effect, HashMap, Option } from 'effect';
 
 function getDescendantPids(pid: number): number[] {
 	try {
@@ -58,10 +58,17 @@ function getOtherGroupDescendants(rootPid: number): number[] {
 export const runShellCommand = (cmd: ShellCommand.Command) =>
 	Effect.uninterruptible(
 		Effect.async<number, Error>((resume) => {
+			if ('_tag' in cmd && cmd._tag !== 'StandardCommand') {
+				throw new Error(`PipedCommand is not supported`);
+			}
 			const standard = cmd as ShellCommand.StandardCommand;
+			const env = Object.fromEntries(HashMap.toEntries(standard.env));
 			const child = spawn(standard.command, standard.args as string[], {
 				stdio: 'inherit',
 				detached: true,
+				cwd: Option.getOrUndefined(standard.cwd),
+				env: { ...process.env, ...env },
+				shell: standard.shell,
 			});
 
 			const forwardSigint = () => {
