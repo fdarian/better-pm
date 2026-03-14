@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.3.4
+
+### Patch Changes
+
+- 15b1b72: Fix SIGINT behavior when running `pm <script>`
+
 ## 0.3.3
 
 ### Patch Changes
