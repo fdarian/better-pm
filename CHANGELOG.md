@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.3.5
+
+### Patch Changes
+
+- 30287d8: Rename `pm pls` to `pm w ls`
+
 ## 0.3.4
 
 ### Patch Changes
