@@ -5,7 +5,7 @@ import { cdCmd } from './cd.ts';
 import { installCmd, installFullCmd } from './install.ts';
 import { linkCmd } from './link.ts';
 import { lsCmd } from './ls.ts';
-import { plsCmd } from './pls.ts';
+import { wCmd } from './w.ts';
 import { removeCmd } from './remove.ts';
 import { runCmd } from './run.ts';
 import { unlinkCmd } from './unlink.ts';
@@ -25,7 +25,7 @@ export const pmCmd = Command.make('pm').pipe(
 		linkCmd,
 		unlinkCmd,
 		cdCmd,
-		plsCmd,
+		wCmd,
 		activateCmd,
 		upCmd,
 		updateCmd,
