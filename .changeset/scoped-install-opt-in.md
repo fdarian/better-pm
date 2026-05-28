@@ -1,5 +1,5 @@
 ---
-"better-pm": minor
+"better-pm": patch
 ---
 
 Make scoped install opt-in via `pm.config.json`.
