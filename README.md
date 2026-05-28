@@ -3,7 +3,7 @@
 A CLI for smarter package manager operations (especially in monorepos).
 
 - **Package manager agnostic** — works with pnpm and bun, no need to remember which one your project uses
-- **Scoped installs by default** — automatically installs only the current package, no more accidental full-monorepo installs
+- **Monorepo-aware install** — warns before a full workspace install and lets you target specific packages with `-F`
 - **Clean signal handling** — `Ctrl+C` properly shuts down the entire process tree, no orphaned dev servers
 - **Easy navigation** — jump to any workspace package from anywhere
 
@@ -48,10 +48,9 @@ pm <script>               Shorthand for pm run
 
 ## Monorepo-aware install
 
-By default, `pm i` runs a full workspace install — same as your package manager would. Use `-F` to target specific packages explicitly:
+Use `-F` to target specific packages explicitly:
 
 ```bash
-pm i                        # installs the whole workspace
 pm i -F @myapp/web          # target a specific package
 pm i -F @myapp/web -F @myapp/api   # target multiple
 ```
@@ -75,17 +74,19 @@ To install everything:
   pm i -y
 ```
 
-### Opt-in: auto-scope to the current package
+## Configuration
 
-If you'd rather have `pm i` automatically scope to the workspace package you're inside (the previous default), drop a `pm.config.json` next to your lockfile:
+Drop a `pm.config.json` next to your lockfile to configure `pm` for your project.
+
+### Auto-scope installs to the current package
+
+With `scopedInstall: true`, running `pm i` from inside a workspace package installs only that package; running it from the monorepo root keeps the usual warning-and-confirm flow.
 
 ```json
 {
   "scopedInstall": true
 }
 ```
-
-With this enabled, running `pm i` from inside a workspace package installs only that package; running it from the monorepo root keeps the usual warning-and-confirm flow.
 
 ## Paste-friendly add
 
