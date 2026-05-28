@@ -1,7 +1,7 @@
 import { Terminal } from '@effect/platform';
 import { Effect, Exit, Layer, Mailbox, Option } from 'effect';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { confirmRootInstall } from './install.ts';
+import { confirmRootInstall, shouldConfirmRootInstall } from './install.ts';
 
 const emptyArgs = {
 	packages: [] as Array<{ name: string; relDir: string }>,
@@ -40,6 +40,53 @@ const dummyTerminalLayer = makeTerminalLayer(makeUserInput('n'));
 
 const runEffect = <A>(effect: Effect.Effect<A, unknown, Terminal.Terminal>) =>
 	Effect.runPromise(effect.pipe(Effect.provide(dummyTerminalLayer)));
+
+describe('shouldConfirmRootInstall', () => {
+	const rootCtx = {
+		type: 'root' as const,
+		lockDir: '/repo',
+		hasWorkspaces: true,
+	};
+	const packageCtx = {
+		type: 'package' as const,
+		lockDir: '/repo',
+		packageName: 'my-pkg',
+	};
+	const baseOpts = {
+		ctx: rootCtx,
+		sure: false,
+		scopedInstall: true,
+	};
+
+	it('returns true when at root, has workspaces, not sure, and scopedInstall is true', () => {
+		expect(shouldConfirmRootInstall(baseOpts)).toBe(true);
+	});
+
+	it('returns false when scopedInstall is false', () => {
+		expect(
+			shouldConfirmRootInstall({ ...baseOpts, scopedInstall: false }),
+		).toBe(false);
+	});
+
+	it('returns false when --sure is passed', () => {
+		expect(shouldConfirmRootInstall({ ...baseOpts, sure: true })).toBe(false);
+	});
+
+	it('returns false when not at root', () => {
+		expect(shouldConfirmRootInstall({ ...baseOpts, ctx: packageCtx })).toBe(
+			false,
+		);
+	});
+
+	it('returns false when there are no workspaces', () => {
+		expect(
+			shouldConfirmRootInstall({
+				...baseOpts,
+				ctx: { ...rootCtx, hasWorkspaces: false },
+			}),
+		).toBe(false);
+	});
+});
 
 describe('confirmRootInstall', () => {
 	let prevClaudeCode: string | undefined;

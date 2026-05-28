@@ -85,6 +85,16 @@ const filterOption = cli.Options.text('filter').pipe(
 	cli.Options.repeated,
 );
 
+export const shouldConfirmRootInstall = (opts: {
+	ctx: MonorepoContext;
+	sure: boolean;
+	scopedInstall: boolean;
+}) =>
+	opts.ctx.type === 'root' &&
+	opts.ctx.hasWorkspaces &&
+	!opts.sure &&
+	opts.scopedInstall;
+
 export const confirmRootInstall = (args: {
 	packages: Array<{ name: string; relDir: string }>;
 	pathSep: string;
@@ -150,7 +160,13 @@ const installHandler = (args: {
 			return;
 		}
 
-		if (ctx.type === 'root' && ctx.hasWorkspaces && !args.sure) {
+		if (
+			shouldConfirmRootInstall({
+				ctx,
+				sure: args.sure,
+				scopedInstall: config.scopedInstall ?? false,
+			})
+		) {
 			const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
 			const proceed = yield* confirmRootInstall({
 				packages,
