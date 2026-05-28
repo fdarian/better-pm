@@ -11,12 +11,20 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false  # never use caching in release builds - uses: oven-sh/setup-bun@v2
+
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
 
@@ -26,9 +34,6 @@ jobs:
         with:
           version: bun run ci:version
           publish: bun run ci:release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Upload binaries to GitHub Release
         if: steps.changesets.outputs.published == 'true'
