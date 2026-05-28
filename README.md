@@ -3,7 +3,6 @@
 A CLI for smarter package manager operations (especially in monorepos).
 
 - **Package manager agnostic** — works with pnpm and bun, no need to remember which one your project uses
-- **Monorepo-aware install** — warns before a full workspace install and lets you target specific packages with `-F`
 - **Clean signal handling** — `Ctrl+C` properly shuts down the entire process tree, no orphaned dev servers
 - **Easy navigation** — jump to any workspace package from anywhere
 
@@ -36,7 +35,7 @@ eval "$(pm activate zsh)"  # or bash
 ## Commands
 
 ```
-pm i                     Install (monorepo-aware)
+pm i                     Install
 pm i -F <pkg>            Install specific workspace package(s)
 pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
@@ -46,16 +45,25 @@ pm run <script>           Run a package.json script
 pm <script>               Shorthand for pm run
 ```
 
-## Monorepo-aware install
-
-Use `-F` to target specific packages explicitly:
+`-F` chains, so you can target multiple workspace packages in one go:
 
 ```bash
-pm i -F @myapp/web          # target a specific package
-pm i -F @myapp/web -F @myapp/api   # target multiple
+pm i -F @myapp/web -F @myapp/api
 ```
 
-From the monorepo root, `pm i` won't blindly install everything — it shows a warning and lists your workspace packages:
+## Configuration
+
+Drop a `pm.config.json` next to your lockfile to configure `pm` for your project.
+
+### Auto-scope installs to the current package
+
+With `scopedInstall: true`, running `pm i` from inside a workspace package installs only that package. From the monorepo root, `pm i` prompts before installing everything:
+
+```json
+{
+  "scopedInstall": true
+}
+```
 
 ```
 [WARNING] You are at the monorepo root. This will install ALL packages.
@@ -72,20 +80,6 @@ To install a specific package:
 
 To install everything:
   pm i -y
-```
-
-## Configuration
-
-Drop a `pm.config.json` next to your lockfile to configure `pm` for your project.
-
-### Auto-scope installs to the current package
-
-With `scopedInstall: true`, running `pm i` from inside a workspace package installs only that package; running it from the monorepo root keeps the usual warning-and-confirm flow.
-
-```json
-{
-  "scopedInstall": true
-}
 ```
 
 ## Paste-friendly add
