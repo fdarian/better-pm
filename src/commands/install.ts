@@ -6,6 +6,7 @@ import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
+import { loadConfig } from '#src/project/config.ts';
 import { findUpward } from '#src/project/find-upward.ts';
 
 type MonorepoContext =
@@ -84,6 +85,16 @@ const filterOption = cli.Options.text('filter').pipe(
 	cli.Options.repeated,
 );
 
+export const shouldConfirmRootInstall = (opts: {
+	ctx: MonorepoContext;
+	sure: boolean;
+	scopedInstall: boolean;
+}) =>
+	opts.ctx.type === 'root' &&
+	opts.ctx.hasWorkspaces &&
+	!opts.sure &&
+	opts.scopedInstall;
+
 export const confirmRootInstall = (args: {
 	packages: Array<{ name: string; relDir: string }>;
 	pathSep: string;
@@ -112,9 +123,7 @@ export const confirmRootInstall = (args: {
 
 		const confirmed = yield* cli.Prompt.confirm({
 			message: 'Proceed with installing all packages?',
-		}).pipe(
-			Effect.catchTag('QuitException', () => Effect.succeed(false)),
-		);
+		}).pipe(Effect.catchTag('QuitException', () => Effect.succeed(false)));
 		return confirmed;
 	});
 
@@ -126,6 +135,7 @@ const installHandler = (args: {
 		const pm = yield* PackageManagerService;
 		const ctx = yield* detectContext;
 		const path = yield* Path.Path;
+		const config = yield* loadConfig(ctx.lockDir);
 		const filters = Array.from(args.filter);
 
 		if (filters.length > 0) {
@@ -137,20 +147,26 @@ const installHandler = (args: {
 			return;
 		}
 
-		if (ctx.type === 'package') {
-			const filters = yield* pm.resolveInstallFilters(
+		if (ctx.type === 'package' && config.scopedInstall) {
+			const scopedFilters = yield* pm.resolveInstallFilters(
 				ctx.lockDir,
 				ctx.packageName,
 			);
-			const cmd = pm.buildFilteredInstallCommand(filters);
+			const cmd = pm.buildFilteredInstallCommand(scopedFilters);
 			yield* Console.log(
-				`Running ${pm.name} install filtered to ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
+				`Running ${pm.name} install filtered to ${scopedFilters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
 			yield* runShellCommand(cmd);
 			return;
 		}
 
-		if (ctx.hasWorkspaces && !args.sure) {
+		if (
+			shouldConfirmRootInstall({
+				ctx,
+				sure: args.sure,
+				scopedInstall: config.scopedInstall ?? false,
+			})
+		) {
 			const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
 			const proceed = yield* confirmRootInstall({
 				packages,
