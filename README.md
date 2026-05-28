@@ -48,10 +48,10 @@ pm <script>               Shorthand for pm run
 
 ## Monorepo-aware install
 
-From inside a workspace package, `pm i` automatically scopes to that package:
+By default, `pm i` runs a full workspace install — same as your package manager would. Use `-F` to target specific packages explicitly:
 
 ```bash
-pm i                        # installs only the current package
+pm i                        # installs the whole workspace
 pm i -F @myapp/web          # target a specific package
 pm i -F @myapp/web -F @myapp/api   # target multiple
 ```
@@ -72,8 +72,20 @@ To install a specific package:
   pm i -F <package-name>
 
 To install everything:
-  pm i --sure
+  pm i -y
 ```
+
+### Opt-in: auto-scope to the current package
+
+If you'd rather have `pm i` automatically scope to the workspace package you're inside (the previous default), drop a `pm.config.json` next to your lockfile:
+
+```json
+{
+  "scopedInstall": true
+}
+```
+
+With this enabled, running `pm i` from inside a workspace package installs only that package; running it from the monorepo root keeps the usual warning-and-confirm flow.
 
 ## Paste-friendly add
 
