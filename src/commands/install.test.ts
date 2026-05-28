@@ -1,7 +1,6 @@
 import { Terminal } from '@effect/platform';
-import { it } from '@effect/vitest';
 import { Effect, Exit, Layer, Mailbox, Option } from 'effect';
-import { afterEach, beforeEach, describe, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { confirmRootInstall } from './install.ts';
 
 const emptyArgs = {
@@ -35,9 +34,12 @@ const makeTerminalLayer = (userInput: Terminal.UserInput) =>
 		}),
 		display: () => Effect.void,
 		readLine: Effect.die('not implemented'),
-	} as any);
+	} satisfies Terminal.Terminal);
 
 const dummyTerminalLayer = makeTerminalLayer(makeUserInput('n'));
+
+const runEffect = <A>(effect: Effect.Effect<A, unknown, Terminal.Terminal>) =>
+	Effect.runPromise(effect.pipe(Effect.provide(dummyTerminalLayer)));
 
 describe('confirmRootInstall', () => {
 	let prevClaudeCode: string | undefined;
@@ -52,13 +54,11 @@ describe('confirmRootInstall', () => {
 	});
 
 	describe('CLAUDECODE mode', () => {
-		it.effect('returns false without prompting', () =>
-			Effect.gen(function* () {
-				process.env.CLAUDECODE = '1';
-				const result = yield* confirmRootInstall(emptyArgs);
-				expect(result).toBe(false);
-			}).pipe(Effect.provide(dummyTerminalLayer)),
-		);
+		it('returns false without prompting', async () => {
+			process.env.CLAUDECODE = '1';
+			const result = await runEffect(confirmRootInstall(emptyArgs));
+			expect(result).toBe(false);
+		});
 	});
 
 	describe('interactive mode', () => {
@@ -66,18 +66,22 @@ describe('confirmRootInstall', () => {
 			delete process.env.CLAUDECODE;
 		});
 
-		it.effect('returns true when user confirms with y', () =>
-			Effect.gen(function* () {
-				const result = yield* confirmRootInstall(emptyArgs);
-				expect(result).toBe(true);
-			}).pipe(Effect.provide(makeTerminalLayer(makeUserInput('y')))),
-		);
+		it('returns true when user confirms with y', async () => {
+			const result = await Effect.runPromise(
+				confirmRootInstall(emptyArgs).pipe(
+					Effect.provide(makeTerminalLayer(makeUserInput('y'))),
+				),
+			);
+			expect(result).toBe(true);
+		});
 
-		it.effect('returns false when user declines with n', () =>
-			Effect.gen(function* () {
-				const result = yield* confirmRootInstall(emptyArgs);
-				expect(result).toBe(false);
-			}).pipe(Effect.provide(makeTerminalLayer(makeUserInput('n')))),
-		);
+		it('returns false when user declines with n', async () => {
+			const result = await Effect.runPromise(
+				confirmRootInstall(emptyArgs).pipe(
+					Effect.provide(makeTerminalLayer(makeUserInput('n'))),
+				),
+			);
+			expect(result).toBe(false);
+		});
 	});
 });
