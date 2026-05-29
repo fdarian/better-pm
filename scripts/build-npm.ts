@@ -60,6 +60,10 @@ for (const platform of platforms) {
 		os: [platform.os],
 		cpu: [platform.arch],
 		files: ['bin'],
+		repository: {
+			type: 'git',
+			url: 'https://github.com/fdarian/better-pm.git',
+		},
 	};
 
 	await Bun.write(
