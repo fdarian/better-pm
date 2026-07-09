@@ -5,6 +5,7 @@ import {
 	enumerateWorkspacePackages,
 	PackageJsonWorkspacesField,
 } from '#src/pm/package-manager-service.ts';
+import type { CommandOverride } from '#src/project/config.ts';
 
 const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(PackageJsonWorkspacesField),
@@ -38,22 +39,40 @@ export const bunPackageManager = {
 			const globs = pkg.workspaces ?? [];
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
-	buildInstallCommand: () => ShellCommand.make('bun', 'install'),
-	buildFilteredInstallCommand: (filters: Array<string>) => {
-		const args: Array<string> = ['install'];
+	buildInstallCommand: (override?: CommandOverride) => {
+		const bin = override?.bin ?? 'bun';
+		const sub = override?.subcommand ?? ['install'];
+		return ShellCommand.make(bin, ...sub);
+	},
+	buildFilteredInstallCommand: (
+		filters: Array<string>,
+		override?: CommandOverride,
+	) => {
+		const bin = override?.bin ?? 'bun';
+		const sub = override?.subcommand ?? ['install'];
+		const args: Array<string> = [...sub];
 		for (const f of filters) {
 			args.push('--filter', f);
 		}
-		return ShellCommand.make('bun', ...args);
+		return ShellCommand.make(bin, ...args);
 	},
-	buildAddCommand: (packages: Array<string>, dev: boolean) => {
-		const args: Array<string> = ['add'];
+	buildAddCommand: (
+		packages: Array<string>,
+		dev: boolean,
+		override?: CommandOverride,
+	) => {
+		const bin = override?.bin ?? 'bun';
+		const sub = override?.subcommand ?? ['add'];
+		const args: Array<string> = [...sub];
 		if (dev) args.push('-D');
 		args.push(...packages);
-		return ShellCommand.make('bun', ...args);
+		return ShellCommand.make(bin, ...args);
 	},
-	buildRemoveCommand: (packages: Array<string>) =>
-		ShellCommand.make('bun', 'remove', ...packages),
+	buildRemoveCommand: (packages: Array<string>, override?: CommandOverride) => {
+		const bin = override?.bin ?? 'bun';
+		const sub = override?.subcommand ?? ['remove'];
+		return ShellCommand.make(bin, ...sub, ...packages);
+	},
 	resolveInstallFilters: (lockDir: string, packageName: string) =>
 		Effect.gen(function* () {
 			const allPackages =

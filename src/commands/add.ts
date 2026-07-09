@@ -4,6 +4,7 @@ import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { resolveAddArgs } from '#src/lib/parse-pm-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
+import { loadConfig, resolveCommandOverride } from '#src/project/config.ts';
 
 const devOption = cli.Options.boolean('D').pipe(cli.Options.withDefault(false));
 
@@ -17,8 +18,10 @@ export const addCmd = cli.Command.make(
 	(args) =>
 		Effect.gen(function* () {
 			const pm = yield* PackageManagerService;
+			const config = yield* loadConfig(pm.lockDir);
+			const override = resolveCommandOverride(config, pm.name, 'add');
 			const resolved = resolveAddArgs(Array.from(args.packages), args.dev);
-			const cmd = pm.buildAddCommand(resolved.packages, resolved.dev);
+			const cmd = pm.buildAddCommand(resolved.packages, resolved.dev, override);
 			const flag = resolved.dev ? ' -D' : '';
 			yield* Console.log(
 				`Running: ${pm.name} add${flag} ${resolved.packages.join(' ')}`,

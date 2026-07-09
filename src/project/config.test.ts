@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { BunFileSystem } from '@effect/platform-bun';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadConfig } from './config.ts';
+import { loadConfig, resolveCommandOverride } from './config.ts';
 
 const runConfig = (lockDir: string) =>
 	Effect.runPromise(
@@ -53,6 +53,15 @@ describe('loadConfig', () => {
 		);
 		const config = await runConfig(tmpDir);
 		expect(config.scopedInstall).toBe(true);
+	});
+
+	it('accepts overrides in config file', async () => {
+		await fs.writeFile(
+			path.join(tmpDir, 'pm.config.json'),
+			JSON.stringify({ overrides: { pnpm: { install: 'nub install' } } }),
+		);
+		const config = await runConfig(tmpDir);
+		expect(config.overrides?.pnpm?.install).toBe('nub install');
 	});
 
 	it('returns scopedInstall: false when explicitly set to false in config file', async () => {
@@ -131,5 +140,44 @@ describe('loadConfig with global config', () => {
 	it('falls back to defaults when both global and project config are missing', async () => {
 		const config = await runConfig(tmpDir);
 		expect(config.scopedInstall).toBe(false);
+	});
+});
+
+describe('resolveCommandOverride', () => {
+	it('parses override string into bin and subcommand', () => {
+		const override = resolveCommandOverride(
+			{ overrides: { pnpm: { install: 'nub install' } } },
+			'pnpm',
+			'install',
+		);
+		expect(override).toEqual({ bin: 'nub', subcommand: ['install'] });
+	});
+
+	it('returns undefined when package manager or operation is missing', () => {
+		expect(resolveCommandOverride({}, 'pnpm', 'install')).toBeUndefined();
+		expect(
+			resolveCommandOverride(
+				{ overrides: { bun: { install: 'bun install' } } },
+				'pnpm',
+				'install',
+			),
+		).toBeUndefined();
+		expect(
+			resolveCommandOverride(
+				{ overrides: { pnpm: { add: 'nub add' } } },
+				'pnpm',
+				'install',
+			),
+		).toBeUndefined();
+	});
+
+	it('returns undefined for blank override string', () => {
+		expect(
+			resolveCommandOverride(
+				{ overrides: { pnpm: { install: '   ' } } },
+				'pnpm',
+				'install',
+			),
+		).toBeUndefined();
 	});
 });
