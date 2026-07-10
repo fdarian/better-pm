@@ -1,3 +1,4 @@
+import * as os from 'node:os';
 import * as nodePath from 'node:path';
 import { FileSystem } from '@effect/platform';
 import { Effect, Schema } from 'effect';
@@ -12,15 +13,56 @@ const defaultConfig: PmConfig = {
 	scopedInstall: false,
 };
 
-export const loadConfig = (lockDir: string) =>
+/** Path to the user-level config file, honoring XDG_CONFIG_HOME. */
+const globalConfigPath = () => {
+	const base =
+		process.env.XDG_CONFIG_HOME && process.env.XDG_CONFIG_HOME.length > 0
+			? process.env.XDG_CONFIG_HOME
+			: nodePath.join(os.homedir(), '.config');
+	return nodePath.join(base, 'better-pm', 'config.json');
+};
+
+const readConfigFile = (configPath: string) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
-		const configPath = nodePath.join(lockDir, 'pm.config.json');
 		const exists = yield* fs.exists(configPath);
-		if (!exists) return defaultConfig;
+		if (!exists) return {} as PmConfig;
 
 		const content = yield* fs.readFileString(configPath);
-		const parsed = yield* Schema.decode(Schema.parseJson(PmConfig))(content);
-		return { ...defaultConfig, ...parsed } as PmConfig;
+		return yield* Schema.decode(Schema.parseJson(PmConfig))(content);
+	});
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** One-level-deep merge; override wins, except when both values are plain records, which shallow-merge. */
+const mergeConfig = (base: PmConfig, override: PmConfig): PmConfig => {
+	const baseRecord = base as Record<string, unknown>;
+	const overrideRecord = override as Record<string, unknown>;
+	const keys = new Set([
+		...Object.keys(baseRecord),
+		...Object.keys(overrideRecord),
+	]);
+	return Object.fromEntries(
+		Array.from(keys, (key) => {
+			const baseValue = baseRecord[key];
+			const overrideValue = overrideRecord[key];
+			if (overrideValue === undefined) return [key, baseValue];
+			if (baseValue === undefined) return [key, overrideValue];
+			if (isRecord(baseValue) && isRecord(overrideValue)) {
+				return [key, { ...baseValue, ...overrideValue }];
+			}
+			return [key, overrideValue];
+		}),
+	) as PmConfig;
+};
+
+export const loadConfig = (lockDir: string) =>
+	Effect.gen(function* () {
+		const global = yield* readConfigFile(globalConfigPath());
+		const project = yield* readConfigFile(
+			nodePath.join(lockDir, 'pm.config.json'),
+		);
+		return mergeConfig(mergeConfig(defaultConfig, global), project);
 	});
