@@ -21,7 +21,7 @@ export const pnpmPackageManager = {
 			for (const line of content.split('\n')) {
 				const match = line.match(/^\s*-\s+(.+)$/);
 				if (match) {
-					globs.push(match[1].trim());
+					globs.push(match[1].trim().replace(/^["']|["']$/g, ''));
 				}
 			}
 			return yield* enumerateWorkspacePackages(lockDir, globs);
