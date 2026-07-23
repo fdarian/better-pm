@@ -1,6 +1,6 @@
 {
 	"name": "better-pm",
-	"version": "0.3.5",
+	"version": "0.3.6",
 	"description": "Better CLI for package manager operations (especially in monorepos)",
 	"type": "module",
 	"license": "Apache-2.0",
@@ -26,10 +26,10 @@
 		"test": "vitest run"
 	},
 	"optionalDependencies": {
-		"better-pm-darwin-arm64": "0.3.5",
-		"better-pm-darwin-x64": "0.3.5",
-		"better-pm-linux-x64": "0.3.5",
-		"better-pm-linux-arm64": "0.3.5"
+		"better-pm-darwin-arm64": "0.3.6",
+		"better-pm-darwin-x64": "0.3.6",
+		"better-pm-linux-x64": "0.3.6",
+		"better-pm-linux-arm64": "0.3.6"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.14",
