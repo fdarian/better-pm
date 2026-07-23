@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.3.6
+
+### Patch Changes
+
+- 2568f39: Fix `pm cd <package>` returning no packages when `pnpm-workspace.yaml` quotes its glob entries (e.g. `- "packages/*"`)
+
 ## 0.3.5
 
 ### Patch Changes
