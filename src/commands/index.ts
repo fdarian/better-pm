@@ -2,14 +2,15 @@ import { Command } from '@effect/cli';
 import { activateCmd } from './activate.ts';
 import { addCmd } from './add.ts';
 import { cdCmd } from './cd.ts';
+import { execCmd } from './exec.ts';
 import { installCmd, installFullCmd } from './install.ts';
 import { linkCmd } from './link.ts';
 import { lsCmd } from './ls.ts';
-import { wCmd } from './w.ts';
 import { removeCmd } from './remove.ts';
 import { runCmd } from './run.ts';
 import { unlinkCmd } from './unlink.ts';
 import { upCmd, updateCmd } from './up.ts';
+import { wCmd } from './w.ts';
 import { whyCmd } from './why.ts';
 import { xCmd } from './x.ts';
 
@@ -21,6 +22,7 @@ export const pmCmd = Command.make('pm').pipe(
 		removeCmd,
 		lsCmd,
 		runCmd,
+		execCmd,
 		whyCmd,
 		linkCmd,
 		unlinkCmd,
