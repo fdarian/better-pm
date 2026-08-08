@@ -92,6 +92,22 @@ describe('bun', () => {
 	});
 });
 
+describe('nub', () => {
+	it('detects nub add without dev flag', () => {
+		expect(resolveAddArgs(['nub add something'], false)).toEqual({
+			packages: ['something'],
+			dev: false,
+		});
+	});
+
+	it('detects nub add -D', () => {
+		expect(resolveAddArgs(['nub add -D something'], false)).toEqual({
+			packages: ['something'],
+			dev: true,
+		});
+	});
+});
+
 describe('multi-arg (unquoted paste)', () => {
 	it('handles shell-split npm install -D', () => {
 		expect(
