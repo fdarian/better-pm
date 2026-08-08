@@ -10,11 +10,17 @@ const argsArg = cli.Args.text({ name: 'args' }).pipe(cli.Args.repeated);
 export const xCmd = cli.Command.make('x', { args: argsArg }, (args) =>
 	Effect.gen(function* () {
 		const pm = yield* PackageManagerService;
-		const execBin =
-			pm.name === 'pnpm' ? 'pnpx' : pm.name === 'bun' ? 'bunx' : 'npx';
 		const passthrough = Array.from(args.args);
-		const cmd = ShellCommand.make(execBin, ...passthrough);
-		yield* Console.log(`Running: ${execBin} ${passthrough.join(' ')}`);
+		const argv: Array<string> =
+			pm.name === 'pnpm'
+				? ['pnpx', ...passthrough]
+				: pm.name === 'bun'
+					? ['bunx', ...passthrough]
+					: pm.name === 'nub'
+						? ['nub', 'x', ...passthrough]
+						: ['npx', ...passthrough];
+		const cmd = ShellCommand.make(argv[0], ...argv.slice(1));
+		yield* Console.log(`Running: ${argv.join(' ')}`);
 		yield* runShellCommand(cmd);
 	}).pipe(Effect.provide(PackageManagerLayer)),
 );

@@ -3,6 +3,7 @@ import { Effect } from 'effect';
 import { NoPackageManagerDetectedError } from '#src/lib/errors.ts';
 import { bunPackageManager } from '#src/pm/bun.ts';
 import { npmPackageManager } from '#src/pm/npm.ts';
+import { nubPackageManager } from '#src/pm/nub.ts';
 import type { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { pnpmPackageManager } from '#src/pm/pnpm.ts';
 import { findUpward } from '#src/project/find-upward.ts';
@@ -15,6 +16,7 @@ const LOCK_FILES: Array<{
 	{ file: 'bun.lock', implementation: bunPackageManager },
 	{ file: 'bun.lockb', implementation: bunPackageManager },
 	{ file: 'package-lock.json', implementation: npmPackageManager },
+	{ file: 'nub.lock', implementation: nubPackageManager },
 ];
 
 export const detectPackageManager = Effect.gen(function* () {

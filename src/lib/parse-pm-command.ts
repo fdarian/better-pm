@@ -1,4 +1,4 @@
-const PM_NAMES = ['npm', 'pnpm', 'bun'] as const;
+const PM_NAMES = ['npm', 'pnpm', 'bun', 'nub'] as const;
 const SUBCOMMANDS = ['install', 'add', 'i'] as const;
 
 function isPmName(token: string): boolean {

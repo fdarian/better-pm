@@ -48,6 +48,15 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	}
 >() {}
 
+export const PackageJsonWorkspacesField = Schema.Union(
+	Schema.Array(Schema.String),
+	Schema.transform(
+		Schema.Struct({ packages: Schema.Array(Schema.String) }),
+		Schema.Array(Schema.String),
+		{ decode: (obj) => obj.packages, encode: (arr) => ({ packages: arr }) },
+	),
+);
+
 const WorkspacePackageJson = Schema.Struct({
 	name: Schema.String,
 });

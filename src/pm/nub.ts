@@ -1,7 +1,6 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
 import {
-	collectWorkspaceDependencies,
 	enumerateWorkspacePackages,
 	PackageJsonWorkspacesField,
 } from '#src/pm/package-manager-service.ts';
@@ -10,8 +9,8 @@ const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(PackageJsonWorkspacesField),
 });
 
-export const bunPackageManager = {
-	name: 'bun',
+export const nubPackageManager = {
+	name: 'nub',
 	detectHasWorkspaces: (lockDir: string) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
@@ -38,30 +37,23 @@ export const bunPackageManager = {
 			const globs = pkg.workspaces ?? [];
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
-	buildInstallCommand: () => ShellCommand.make('bun', 'install'),
+	buildInstallCommand: () => ShellCommand.make('nub', 'install'),
 	buildFilteredInstallCommand: (filters: Array<string>) => {
-		const args: Array<string> = ['install'];
+		const args: Array<string> = [];
 		for (const f of filters) {
-			args.push('--filter', f);
+			args.push('-F', f);
 		}
-		return ShellCommand.make('bun', ...args);
+		args.push('install');
+		return ShellCommand.make('nub', ...args);
 	},
 	buildAddCommand: (packages: Array<string>, dev: boolean) => {
 		const args: Array<string> = ['add'];
 		if (dev) args.push('-D');
 		args.push(...packages);
-		return ShellCommand.make('bun', ...args);
+		return ShellCommand.make('nub', ...args);
 	},
 	buildRemoveCommand: (packages: Array<string>) =>
-		ShellCommand.make('bun', 'remove', ...packages),
-	resolveInstallFilters: (lockDir: string, packageName: string) =>
-		Effect.gen(function* () {
-			const allPackages =
-				yield* bunPackageManager.listWorkspacePackages(lockDir);
-			return yield* collectWorkspaceDependencies(
-				lockDir,
-				packageName,
-				allPackages,
-			);
-		}),
+		ShellCommand.make('nub', 'remove', ...packages),
+	resolveInstallFilters: (_lockDir: string, packageName: string) =>
+		Effect.succeed([`${packageName}...`]),
 };
