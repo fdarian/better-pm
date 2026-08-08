@@ -43,6 +43,7 @@ pm ls                    List workspace packages as a tree
 pm cd <pkg>              cd into a workspace package
 pm run <script>           Run a package.json script
 pm <script>               Shorthand for pm run
+pm exec <cmd>             Run a locally installed binary
 ```
 
 `-F` chains, so you can target multiple workspace packages in one go:
