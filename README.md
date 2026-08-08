@@ -2,7 +2,7 @@
 
 A CLI for smarter package manager operations (especially in monorepos).
 
-- **Package manager agnostic** — works with pnpm and bun, no need to remember which one your project uses
+- **Package manager agnostic** — works with pnpm, bun, and nub, no need to remember which one your project uses
 - **Clean signal handling** — `Ctrl+C` properly shuts down the entire process tree, no orphaned dev servers
 - **Easy navigation** — jump to any workspace package from anywhere
 
