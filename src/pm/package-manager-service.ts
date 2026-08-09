@@ -6,6 +6,7 @@ import {
 import type { PlatformError } from '@effect/platform/Error';
 import { Context, Effect, Schema } from 'effect';
 import type { ParseError } from 'effect/ParseResult';
+import type { CommandOverride } from '#src/project/config.ts';
 
 export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	PackageManagerService,
@@ -26,16 +27,21 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 			PlatformError | ParseError,
 			FileSystem.FileSystem | Path.Path
 		>;
-		readonly buildInstallCommand: () => ShellCommand.Command;
+		readonly buildInstallCommand: (
+			override?: CommandOverride,
+		) => ShellCommand.Command;
 		readonly buildFilteredInstallCommand: (
 			filters: Array<string>,
+			override?: CommandOverride,
 		) => ShellCommand.Command;
 		readonly buildAddCommand: (
 			packages: Array<string>,
 			dev: boolean,
+			override?: CommandOverride,
 		) => ShellCommand.Command;
 		readonly buildRemoveCommand: (
 			packages: Array<string>,
+			override?: CommandOverride,
 		) => ShellCommand.Command;
 		readonly resolveInstallFilters: (
 			lockDir: string,

@@ -3,11 +3,21 @@ import * as nodePath from 'node:path';
 import { FileSystem } from '@effect/platform';
 import { Effect, Schema } from 'effect';
 
+const PmOverrides = Schema.Record({
+	key: Schema.String,
+	value: Schema.Record({ key: Schema.String, value: Schema.String }),
+});
+
 const PmConfig = Schema.Struct({
 	scopedInstall: Schema.optional(Schema.Boolean),
+	overrides: Schema.optional(PmOverrides),
 });
 
 export type PmConfig = Schema.Schema.Type<typeof PmConfig>;
+export type CommandOverride = {
+	bin: string;
+	subcommand: ReadonlyArray<string>;
+};
 
 const defaultConfig: PmConfig = {
 	scopedInstall: false,
@@ -66,3 +76,19 @@ export const loadConfig = (lockDir: string) =>
 		);
 		return mergeConfig(mergeConfig(defaultConfig, global), project);
 	});
+
+export const resolveCommandOverride = (
+	config: PmConfig,
+	pmName: string,
+	operation: string,
+): CommandOverride | undefined => {
+	const value = config.overrides?.[pmName]?.[operation];
+	if (value === undefined) return undefined;
+
+	const tokens = value.split(/\s+/).filter((token) => token.length > 0);
+	if (tokens.length === 0) return undefined;
+
+	const bin = tokens[0];
+	const subcommand = tokens.slice(1);
+	return { bin, subcommand };
+};

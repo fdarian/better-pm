@@ -6,7 +6,7 @@ import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
-import { loadConfig } from '#src/project/config.ts';
+import { loadConfig, resolveCommandOverride } from '#src/project/config.ts';
 import { findUpward } from '#src/project/find-upward.ts';
 
 type MonorepoContext =
@@ -136,10 +136,11 @@ const installHandler = (args: {
 		const ctx = yield* detectContext;
 		const path = yield* Path.Path;
 		const config = yield* loadConfig(ctx.lockDir);
+		const installOverride = resolveCommandOverride(config, pm.name, 'install');
 		const filters = Array.from(args.filter);
 
 		if (filters.length > 0) {
-			const cmd = pm.buildFilteredInstallCommand(filters);
+			const cmd = pm.buildFilteredInstallCommand(filters, installOverride);
 			yield* Console.log(
 				`Running: ${pm.name} install with filters: ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
@@ -152,7 +153,10 @@ const installHandler = (args: {
 				ctx.lockDir,
 				ctx.packageName,
 			);
-			const cmd = pm.buildFilteredInstallCommand(scopedFilters);
+			const cmd = pm.buildFilteredInstallCommand(
+				scopedFilters,
+				installOverride,
+			);
 			yield* Console.log(
 				`Running ${pm.name} install filtered to ${scopedFilters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
@@ -175,7 +179,7 @@ const installHandler = (args: {
 			if (!proceed) return;
 		}
 
-		const cmd = pm.buildInstallCommand();
+		const cmd = pm.buildInstallCommand(installOverride);
 		yield* Console.log(
 			`Running ${pm.name} install (cmd: ${pc.gray(renderCommand(cmd))})`,
 		);
