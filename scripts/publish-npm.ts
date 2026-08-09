@@ -38,7 +38,7 @@ for (const platform of platforms) {
 	}
 }
 
-const changesetPublish = Bun.spawn(['bunx', 'changeset', 'publish'], {
+const changesetPublish = Bun.spawn(['pnpm', 'exec', 'changeset', 'publish'], {
 	cwd: repoRoot,
 	stdout: 'inherit',
 	stderr: 'inherit',

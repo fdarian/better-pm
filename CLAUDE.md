@@ -2,6 +2,8 @@
 
 Standalone CLI for package manager operations in monorepos. Supports pnpm, bun, and npm.
 
+This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `enableGlobalVirtualStore: true`) and bun as the runtime for executing scripts (`bun scripts/*.ts`, `bun entries/cli.ts`).
+
 ## Structure
 
 - `entries/cli.ts` — Effect CLI bootstrap
@@ -27,7 +29,7 @@ See `docs/deployment.md` for the full release pipeline.
 ## Development
 
 ```sh
-bun install
+pnpm install
 bun run check:tsc
 bun entries/cli.ts i
 ```

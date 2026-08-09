@@ -2,7 +2,7 @@
 
 ## Pipeline
 
-1. Create a changeset: `bunx changeset`
+1. Create a changeset: `pnpm exec changeset`
 2. Push to main — the release workflow triggers on `.changeset/**` changes
 3. Changesets action creates a "Version Packages" PR with bumped versions
 4. Merging the PR triggers publish:
