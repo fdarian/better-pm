@@ -8,6 +8,7 @@ Standalone CLI for package manager operations in monorepos. Supports pnpm, bun, 
 - `src/commands/` — Command implementations (install, add, remove, ls, cd, activate)
 - `src/pm/` — Package manager abstraction (pnpm/bun/npm implementations, detection)
 - `src/project/find-upward.ts` — Upward file traversal utility
+- `src/project/config.ts` — Config loading; merges global `~/.config/better-pm/config.json` (XDG-aware) under per-project `pm.config.json`
 - `src/lib/errors.ts` — Tagged errors
 
 ## Commands
