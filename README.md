@@ -110,3 +110,7 @@ pm cd @myapp/web    # cd into a workspace package
 pm cd               # cd to monorepo root
 ```
 
+## Neovim
+
+A companion plugin opens workspace packages in [oil.nvim](https://github.com/stevearc/oil.nvim) via `:Pm cd <package-name>`. See [docs/nvim.md](docs/nvim.md).
+
