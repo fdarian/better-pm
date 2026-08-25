@@ -12,8 +12,8 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 - `src/project/find-upward.ts` — Upward file traversal utility
 - `src/project/config.ts` — Config loading; merges global `~/.config/better-pm/config.json` (XDG-aware) under per-project `pm.config.json`
 - `src/lib/errors.ts` — Tagged errors
-- `lua/pm/` — Neovim plugin module (`:Pm cd` wraps `pm cd` and opens the result in oil.nvim); see `docs/nvim.md`
-- `plugin/` — Registers the `:Pm` user command; lives at repo root (not `src/`) because lazy.nvim can't install from a subdirectory
+- `lua/pm/` — Neovim plugin module (`:pm cd` wraps `pm cd` and opens the result in oil.nvim); see `docs/nvim.md`
+- `plugin/` — Registers the `:Pm` user command and the `:pm` cmdline abbreviation that expands to it; lives at repo root (not `src/`) because lazy.nvim can't install from a subdirectory
 
 ## Commands
 
