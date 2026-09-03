@@ -1,6 +1,7 @@
 import { Effect } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { bunPackageManager } from './bun.ts';
+import { assembleFilteredArgv } from './filter-argv.ts';
 import { npmPackageManager } from './npm.ts';
 import { nubPackageManager } from './nub.ts';
 import { pnpmPackageManager } from './pnpm.ts';
@@ -226,6 +227,59 @@ describe('package manager builders', () => {
 				nubPackageManager.buildRemoveCommand(['lodash'], ['web']),
 			);
 			expect(serialized.args).toEqual(['-F', 'web', 'remove', 'lodash']);
+		});
+	});
+
+	// Passthrough commands (run/exec/x/why/link/unlink/ls/up) don't call the
+	// buildXCommand methods above — they assemble argv directly from each PM's
+	// exported `filterSpec`. Exercise that spec the same way those commands do.
+	describe('filterSpec (passthrough commands)', () => {
+		it('pnpm places -F before an arbitrary subcommand', () => {
+			const argv = Effect.runSync(
+				assembleFilteredArgv(
+					pnpmPackageManager.filterSpec,
+					['why'],
+					['web'],
+					['lodash'],
+				),
+			);
+			expect(argv).toEqual(['-F', 'web', 'why', 'lodash']);
+		});
+
+		it('bun places --filter after an arbitrary subcommand', () => {
+			const argv = Effect.runSync(
+				assembleFilteredArgv(
+					bunPackageManager.filterSpec,
+					['why'],
+					['web'],
+					['lodash'],
+				),
+			);
+			expect(argv).toEqual(['why', '--filter', 'web', 'lodash']);
+		});
+
+		it('npm places -w after an arbitrary subcommand', () => {
+			const argv = Effect.runSync(
+				assembleFilteredArgv(
+					npmPackageManager.filterSpec,
+					['link'],
+					['@myapp/web'],
+					[],
+				),
+			);
+			expect(argv).toEqual(['link', '-w', '@myapp/web']);
+		});
+
+		it('nub places -F before an arbitrary subcommand', () => {
+			const argv = Effect.runSync(
+				assembleFilteredArgv(
+					nubPackageManager.filterSpec,
+					['x'],
+					['web'],
+					['tsc'],
+				),
+			);
+			expect(argv).toEqual(['-F', 'web', 'x', 'tsc']);
 		});
 	});
 });
