@@ -1,9 +1,7 @@
 import * as cli from '@effect/cli';
-import { Command as ShellCommand } from '@effect/platform';
-import { Console, Effect } from 'effect';
-import { runShellCommand } from '#src/commands/run-shell-command.ts';
-import { filterOption } from '#src/lib/filter-option.ts';
-import { assembleFilteredArgv } from '#src/pm/filter-argv.ts';
+import { Effect } from 'effect';
+import { filterOption } from '#src/commands/filter-option.ts';
+import { runFilteredCommand } from '#src/commands/run-filtered-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
@@ -17,16 +15,6 @@ export const runCmd = cli.Command.make(
 			const pm = yield* PackageManagerService;
 			const passthrough = Array.from(args.args);
 			const filters = Array.from(args.filter);
-			const argv = yield* assembleFilteredArgv(
-				pm.filterSpec,
-				pm.name,
-				'run',
-				['run'],
-				filters,
-				passthrough,
-			);
-			const cmd = ShellCommand.make(pm.name, ...argv);
-			yield* Console.log(`Running: ${pm.name} ${argv.join(' ')}`);
-			yield* runShellCommand(cmd);
+			yield* runFilteredCommand(pm, 'run', ['run'], filters, passthrough);
 		}).pipe(Effect.provide(PackageManagerLayer)),
 );

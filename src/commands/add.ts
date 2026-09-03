@@ -1,7 +1,7 @@
 import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
+import { filterOption } from '#src/commands/filter-option.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
-import { filterOption } from '#src/lib/filter-option.ts';
 import { resolveAddArgs } from '#src/lib/parse-pm-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
