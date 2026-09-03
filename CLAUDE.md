@@ -9,6 +9,7 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 - `entries/cli.ts` — Effect CLI bootstrap
 - `src/commands/` — Command implementations (install, add, remove, ls, cd, activate)
 - `src/pm/` — Package manager abstraction (pnpm/bun/npm implementations, detection)
+- `src/pm/filter-argv.ts` — Shared `-F/--filter` argv assembly; each PM declares a `FilterSpec` (flag spelling, position relative to the subcommand, selector-syntax support) consumed by every command that shells out
 - `src/project/find-upward.ts` — Upward file traversal utility
 - `src/project/config.ts` — Config loading; merges global `~/.config/better-pm/config.json` (XDG-aware) under per-project `pm.config.json`
 - `src/lib/errors.ts` — Tagged errors
@@ -23,6 +24,7 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 - `pm ls` — List workspace packages as tree
 - `pm cd [package-name]` — Print package dir; shell wrapper via `activate` enables actual cd
 - `pm activate <shell>` — Output shell wrapper + completions (zsh/bash)
+- `-F/--filter <selector>` — Scopes any command that shells out (all of the above except `cd`/`activate`, plus `run`/`exec`/`x`/`why`/`link`/`unlink`/`up`/`update`) to specific workspace package(s); repeatable
 
 ## Deployment
 

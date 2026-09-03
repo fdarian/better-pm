@@ -36,7 +36,6 @@ eval "$(pm activate zsh)"  # or bash
 
 ```
 pm i                     Install
-pm i -F <pkg>            Install specific workspace package(s)
 pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
 pm ls                    List workspace packages as a tree
@@ -46,10 +45,12 @@ pm <script>               Shorthand for pm run
 pm exec <cmd>             Run a locally installed binary
 ```
 
-`-F` chains, so you can target multiple workspace packages in one go:
+Add `-F`/`--filter <pkg>` to any command that shells out to the package manager — `i`, `add`, `remove`, `run`, `exec`, `x`, `up`/`update`, `why`, `link`, `unlink`, `ls` — to scope it to specific workspace package(s), mirroring pnpm's `-F`. It chains, so you can target multiple packages in one go, and it works with the `pm <script>` shorthand too:
 
 ```bash
 pm i -F @myapp/web -F @myapp/api
+pm add -F @myapp/web lodash
+pm -F @myapp/web dev
 ```
 
 ## Configuration
