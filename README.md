@@ -45,7 +45,7 @@ pm <script>               Shorthand for pm run
 pm exec <cmd>             Run a locally installed binary
 ```
 
-Add `-F`/`--filter <pkg>` to any command that shells out to the package manager — `i`, `add`, `remove`, `run`, `exec`, `x`, `up`/`update`, `why`, `link`, `unlink`, `ls` — to scope it to specific workspace package(s), mirroring pnpm's `-F`. It chains, so you can target multiple packages in one go, and it works with the `pm <script>` shorthand too:
+Add `-F`/`--filter <pkg>` to `i`, `add`, `remove`, `run`, `up`/`update`, `exec`, `why`, `unlink`, or `ls` to scope it to specific workspace package(s), mirroring pnpm's `-F`. It chains, so you can target multiple packages in one go, and it works with the `pm <script>` shorthand too. Not available on `link`, `x`, `cd`, or `activate` — and bun doesn't support it on `exec`/`why`/`unlink`/`ls` either, so those fail loudly rather than silently ignoring the flag:
 
 ```bash
 pm i -F @myapp/web -F @myapp/api
