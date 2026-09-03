@@ -12,14 +12,21 @@ const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(PackageJsonWorkspacesField),
 });
 
+const PM_NAME = 'bun';
+
 const filterSpec: FilterSpec = {
 	flag: '--filter',
 	position: 'after-subcommand',
 	supportsSelectorSyntax: true,
+	// Verified against the real binary: `bun x`/`bunx` doesn't parse --filter at
+	// all (it silently treats the selector as the target, shifting every arg
+	// after it), and `bun why`/`bun pm ls`/`bun link`/`bun unlink` don't accept
+	// it either.
+	unsupportedOperations: new Set(['exec', 'why', 'link', 'unlink', 'ls']),
 };
 
 export const bunPackageManager = {
-	name: 'bun',
+	name: PM_NAME,
 	filterSpec,
 	detectHasWorkspaces: (lockDir: string) =>
 		Effect.gen(function* () {
@@ -48,7 +55,7 @@ export const bunPackageManager = {
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
 	buildInstallCommand: (override?: CommandOverride) => {
-		const bin = override?.bin ?? 'bun';
+		const bin = override?.bin ?? PM_NAME;
 		const sub = override?.subcommand ?? ['install'];
 		return ShellCommand.make(bin, ...sub);
 	},
@@ -57,9 +64,15 @@ export const bunPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'bun';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['install'];
-			const args = yield* assembleFilteredArgv(filterSpec, sub, filters);
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				PM_NAME,
+				'install',
+				sub,
+				filters,
+			);
 			return ShellCommand.make(bin, ...args);
 		}),
 	buildAddCommand: (
@@ -69,11 +82,13 @@ export const bunPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'bun';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['add'];
 			const trailingArgs = dev ? ['-D', ...packages] : packages;
 			const args = yield* assembleFilteredArgv(
 				filterSpec,
+				PM_NAME,
+				'add',
 				sub,
 				filters,
 				trailingArgs,
@@ -86,10 +101,12 @@ export const bunPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'bun';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['remove'];
 			const args = yield* assembleFilteredArgv(
 				filterSpec,
+				PM_NAME,
+				'remove',
 				sub,
 				filters,
 				packages,

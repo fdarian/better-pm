@@ -19,6 +19,8 @@ export const unlinkCmd = cli.Command.make(
 			const filters = Array.from(args.filter);
 			const argv = yield* assembleFilteredArgv(
 				pm.filterSpec,
+				pm.name,
+				'unlink',
 				['unlink'],
 				filters,
 				passthrough,

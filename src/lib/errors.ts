@@ -36,3 +36,15 @@ export class UnsupportedFilterSelectorError extends Data.TaggedError(
 		});
 	}
 }
+
+export class UnsupportedFilterOperationError extends Data.TaggedError(
+	'UnsupportedFilterOperationError',
+)<{
+	message: string;
+}> {
+	constructor(pmName: string, operation: string) {
+		super({
+			message: `${pmName} doesn't support -F/--filter on \`${pmName} ${operation}\`.`,
+		});
+	}
+}

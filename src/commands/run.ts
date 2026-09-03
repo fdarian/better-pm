@@ -19,6 +19,8 @@ export const runCmd = cli.Command.make(
 			const filters = Array.from(args.filter);
 			const argv = yield* assembleFilteredArgv(
 				pm.filterSpec,
+				pm.name,
+				'run',
 				['run'],
 				filters,
 				passthrough,

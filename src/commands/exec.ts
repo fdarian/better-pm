@@ -23,6 +23,8 @@ export const execCmd = cli.Command.make(
 			const filters = Array.from(args.filter);
 			const argv = yield* assembleFilteredArgv(
 				pm.filterSpec,
+				pm.name,
+				'exec',
 				[subcommand],
 				filters,
 				passthrough,

@@ -32,6 +32,8 @@ const updateHandler = (args: {
 		const filters = Array.from(args.filter);
 		const argv = yield* assembleFilteredArgv(
 			pm.filterSpec,
+			pm.name,
+			'update',
 			['update'],
 			filters,
 			extraArgs,

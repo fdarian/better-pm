@@ -6,9 +6,16 @@ import {
 import type { PlatformError } from '@effect/platform/Error';
 import { Context, Effect, Schema } from 'effect';
 import type { ParseError } from 'effect/ParseResult';
-import type { UnsupportedFilterSelectorError } from '#src/lib/errors.ts';
+import type {
+	UnsupportedFilterOperationError,
+	UnsupportedFilterSelectorError,
+} from '#src/lib/errors.ts';
 import type { FilterSpec } from '#src/pm/filter-argv.ts';
 import type { CommandOverride } from '#src/project/config.ts';
+
+type FilterCommandError =
+	| UnsupportedFilterSelectorError
+	| UnsupportedFilterOperationError;
 
 export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	PackageManagerService,
@@ -36,18 +43,18 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 		readonly buildFilteredInstallCommand: (
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, UnsupportedFilterSelectorError>;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly buildAddCommand: (
 			packages: Array<string>,
 			dev: boolean,
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, UnsupportedFilterSelectorError>;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly buildRemoveCommand: (
 			packages: Array<string>,
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, UnsupportedFilterSelectorError>;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly resolveInstallFilters: (
 			lockDir: string,
 			packageName: string,

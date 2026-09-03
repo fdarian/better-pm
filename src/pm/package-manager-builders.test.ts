@@ -230,14 +230,16 @@ describe('package manager builders', () => {
 		});
 	});
 
-	// Passthrough commands (run/exec/x/why/link/unlink/ls/up) don't call the
+	// Passthrough commands (run/exec/why/unlink/ls/up) don't call the
 	// buildXCommand methods above — they assemble argv directly from each PM's
 	// exported `filterSpec`. Exercise that spec the same way those commands do.
 	describe('filterSpec (passthrough commands)', () => {
-		it('pnpm places -F before an arbitrary subcommand', () => {
+		it('pnpm places -F before an arbitrary supported operation', () => {
 			const argv = Effect.runSync(
 				assembleFilteredArgv(
 					pnpmPackageManager.filterSpec,
+					'pnpm',
+					'why',
 					['why'],
 					['web'],
 					['lodash'],
@@ -246,22 +248,26 @@ describe('package manager builders', () => {
 			expect(argv).toEqual(['-F', 'web', 'why', 'lodash']);
 		});
 
-		it('bun places --filter after an arbitrary subcommand', () => {
+		it('bun places --filter after a supported operation (run)', () => {
 			const argv = Effect.runSync(
 				assembleFilteredArgv(
 					bunPackageManager.filterSpec,
-					['why'],
+					'bun',
+					'run',
+					['run'],
 					['web'],
-					['lodash'],
+					['dev'],
 				),
 			);
-			expect(argv).toEqual(['why', '--filter', 'web', 'lodash']);
+			expect(argv).toEqual(['run', '--filter', 'web', 'dev']);
 		});
 
-		it('npm places -w after an arbitrary subcommand', () => {
+		it('npm places -w after an arbitrary supported operation', () => {
 			const argv = Effect.runSync(
 				assembleFilteredArgv(
 					npmPackageManager.filterSpec,
+					'npm',
+					'link',
 					['link'],
 					['@myapp/web'],
 					[],
@@ -270,16 +276,61 @@ describe('package manager builders', () => {
 			expect(argv).toEqual(['link', '-w', '@myapp/web']);
 		});
 
-		it('nub places -F before an arbitrary subcommand', () => {
+		it('nub places -F before a supported operation (exec)', () => {
 			const argv = Effect.runSync(
 				assembleFilteredArgv(
 					nubPackageManager.filterSpec,
-					['x'],
+					'nub',
+					'exec',
+					['exec'],
 					['web'],
 					['tsc'],
 				),
 			);
-			expect(argv).toEqual(['-F', 'web', 'x', 'tsc']);
+			expect(argv).toEqual(['-F', 'web', 'exec', 'tsc']);
+		});
+
+		it('pnpm/nub reject a filtered link', () => {
+			for (const pm of [pnpmPackageManager, nubPackageManager]) {
+				const error = Effect.runSync(
+					Effect.flip(
+						assembleFilteredArgv(
+							pm.filterSpec,
+							pm.name,
+							'link',
+							['link'],
+							['web'],
+						),
+					),
+				);
+				expect(error._tag).toBe('UnsupportedFilterOperationError');
+				expect(error.message).toContain(pm.name);
+				expect(error.message).toContain('link');
+			}
+		});
+
+		it.each(['exec', 'why', 'link', 'unlink', 'ls'] as const)(
+			'bun rejects a filtered %s',
+			(operation) => {
+				const error = Effect.runSync(
+					Effect.flip(
+						assembleFilteredArgv(
+							bunPackageManager.filterSpec,
+							'bun',
+							operation,
+							[operation],
+							['web'],
+						),
+					),
+				);
+				expect(error._tag).toBe('UnsupportedFilterOperationError');
+				expect(error.message).toContain('bun');
+				expect(error.message).toContain(operation);
+			},
+		);
+
+		it('npm has no unsupported operations', () => {
+			expect(npmPackageManager.filterSpec.unsupportedOperations.size).toBe(0);
 		});
 	});
 });

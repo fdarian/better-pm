@@ -11,14 +11,20 @@ const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(Schema.Array(Schema.String)),
 });
 
+const PM_NAME = 'npm';
+
 const filterSpec: FilterSpec = {
 	flag: '-w',
 	position: 'after-subcommand',
 	supportsSelectorSyntax: false,
+	// Verified against the real binary: npm's -w works on every operation we
+	// expose it on. `why` isn't in this set because why.ts already refuses to
+	// run at all for npm, so this is never consulted for that operation.
+	unsupportedOperations: new Set(),
 };
 
 export const npmPackageManager = {
-	name: 'npm',
+	name: PM_NAME,
 	filterSpec,
 	detectHasWorkspaces: (lockDir: string) =>
 		Effect.gen(function* () {
@@ -47,7 +53,7 @@ export const npmPackageManager = {
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
 	buildInstallCommand: (override?: CommandOverride) => {
-		const bin = override?.bin ?? 'npm';
+		const bin = override?.bin ?? PM_NAME;
 		const sub = override?.subcommand ?? ['install'];
 		return ShellCommand.make(bin, ...sub);
 	},
@@ -56,9 +62,15 @@ export const npmPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'npm';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['install'];
-			const args = yield* assembleFilteredArgv(filterSpec, sub, filters);
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				PM_NAME,
+				'install',
+				sub,
+				filters,
+			);
 			return ShellCommand.make(bin, ...args);
 		}),
 	buildAddCommand: (
@@ -68,11 +80,13 @@ export const npmPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'npm';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['install'];
 			const trailingArgs = dev ? ['-D', ...packages] : packages;
 			const args = yield* assembleFilteredArgv(
 				filterSpec,
+				PM_NAME,
+				'add',
 				sub,
 				filters,
 				trailingArgs,
@@ -85,10 +99,12 @@ export const npmPackageManager = {
 		override?: CommandOverride,
 	) =>
 		Effect.gen(function* () {
-			const bin = override?.bin ?? 'npm';
+			const bin = override?.bin ?? PM_NAME;
 			const sub = override?.subcommand ?? ['uninstall'];
 			const args = yield* assembleFilteredArgv(
 				filterSpec,
+				PM_NAME,
+				'remove',
 				sub,
 				filters,
 				packages,

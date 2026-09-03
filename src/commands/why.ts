@@ -23,6 +23,8 @@ export const whyCmd = cli.Command.make(
 			const filters = Array.from(args.filter);
 			const argv = yield* assembleFilteredArgv(
 				pm.filterSpec,
+				pm.name,
+				'why',
 				['why'],
 				filters,
 				passthrough,

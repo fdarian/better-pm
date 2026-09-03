@@ -20,6 +20,8 @@ export const lsCmd = cli.Command.make(
 			const filters = Array.from(args.filter);
 			const argv = yield* assembleFilteredArgv(
 				pm.filterSpec,
+				pm.name,
+				'ls',
 				subcommand,
 				filters,
 				passthrough,
