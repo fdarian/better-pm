@@ -1,5 +1,6 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
+import { assembleFilteredArgv, type FilterSpec } from '#src/pm/filter-argv.ts';
 import {
 	enumerateWorkspacePackages,
 	PackageJsonWorkspacesField,
@@ -9,8 +10,15 @@ const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(PackageJsonWorkspacesField),
 });
 
+const filterSpec: FilterSpec = {
+	flag: '-F',
+	position: 'before-subcommand',
+	supportsSelectorSyntax: true,
+};
+
 export const nubPackageManager = {
 	name: 'nub',
+	filterSpec,
 	detectHasWorkspaces: (lockDir: string) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
@@ -38,22 +46,40 @@ export const nubPackageManager = {
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
 	buildInstallCommand: () => ShellCommand.make('nub', 'install'),
-	buildFilteredInstallCommand: (filters: Array<string>) => {
-		const args: Array<string> = [];
-		for (const f of filters) {
-			args.push('-F', f);
-		}
-		args.push('install');
-		return ShellCommand.make('nub', ...args);
-	},
-	buildAddCommand: (packages: Array<string>, dev: boolean) => {
-		const args: Array<string> = ['add'];
-		if (dev) args.push('-D');
-		args.push(...packages);
-		return ShellCommand.make('nub', ...args);
-	},
-	buildRemoveCommand: (packages: Array<string>) =>
-		ShellCommand.make('nub', 'remove', ...packages),
+	buildFilteredInstallCommand: (filters: Array<string>) =>
+		Effect.gen(function* () {
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				['install'],
+				filters,
+			);
+			return ShellCommand.make('nub', ...args);
+		}),
+	buildAddCommand: (
+		packages: Array<string>,
+		dev: boolean,
+		filters: Array<string>,
+	) =>
+		Effect.gen(function* () {
+			const trailingArgs = dev ? ['-D', ...packages] : packages;
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				['add'],
+				filters,
+				trailingArgs,
+			);
+			return ShellCommand.make('nub', ...args);
+		}),
+	buildRemoveCommand: (packages: Array<string>, filters: Array<string>) =>
+		Effect.gen(function* () {
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				['remove'],
+				filters,
+				packages,
+			);
+			return ShellCommand.make('nub', ...args);
+		}),
 	resolveInstallFilters: (_lockDir: string, packageName: string) =>
 		Effect.succeed([`${packageName}...`]),
 };

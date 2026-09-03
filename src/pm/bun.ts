@@ -1,5 +1,6 @@
 import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
 import { Effect, Schema } from 'effect';
+import { assembleFilteredArgv, type FilterSpec } from '#src/pm/filter-argv.ts';
 import {
 	collectWorkspaceDependencies,
 	enumerateWorkspacePackages,
@@ -11,8 +12,15 @@ const PackageJsonWithWorkspaces = Schema.Struct({
 	workspaces: Schema.optional(PackageJsonWorkspacesField),
 });
 
+const filterSpec: FilterSpec = {
+	flag: '--filter',
+	position: 'after-subcommand',
+	supportsSelectorSyntax: true,
+};
+
 export const bunPackageManager = {
 	name: 'bun',
+	filterSpec,
 	detectHasWorkspaces: (lockDir: string) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
@@ -47,32 +55,47 @@ export const bunPackageManager = {
 	buildFilteredInstallCommand: (
 		filters: Array<string>,
 		override?: CommandOverride,
-	) => {
-		const bin = override?.bin ?? 'bun';
-		const sub = override?.subcommand ?? ['install'];
-		const args: Array<string> = [...sub];
-		for (const f of filters) {
-			args.push('--filter', f);
-		}
-		return ShellCommand.make(bin, ...args);
-	},
+	) =>
+		Effect.gen(function* () {
+			const bin = override?.bin ?? 'bun';
+			const sub = override?.subcommand ?? ['install'];
+			const args = yield* assembleFilteredArgv(filterSpec, sub, filters);
+			return ShellCommand.make(bin, ...args);
+		}),
 	buildAddCommand: (
 		packages: Array<string>,
 		dev: boolean,
+		filters: Array<string>,
 		override?: CommandOverride,
-	) => {
-		const bin = override?.bin ?? 'bun';
-		const sub = override?.subcommand ?? ['add'];
-		const args: Array<string> = [...sub];
-		if (dev) args.push('-D');
-		args.push(...packages);
-		return ShellCommand.make(bin, ...args);
-	},
-	buildRemoveCommand: (packages: Array<string>, override?: CommandOverride) => {
-		const bin = override?.bin ?? 'bun';
-		const sub = override?.subcommand ?? ['remove'];
-		return ShellCommand.make(bin, ...sub, ...packages);
-	},
+	) =>
+		Effect.gen(function* () {
+			const bin = override?.bin ?? 'bun';
+			const sub = override?.subcommand ?? ['add'];
+			const trailingArgs = dev ? ['-D', ...packages] : packages;
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				sub,
+				filters,
+				trailingArgs,
+			);
+			return ShellCommand.make(bin, ...args);
+		}),
+	buildRemoveCommand: (
+		packages: Array<string>,
+		filters: Array<string>,
+		override?: CommandOverride,
+	) =>
+		Effect.gen(function* () {
+			const bin = override?.bin ?? 'bun';
+			const sub = override?.subcommand ?? ['remove'];
+			const args = yield* assembleFilteredArgv(
+				filterSpec,
+				sub,
+				filters,
+				packages,
+			);
+			return ShellCommand.make(bin, ...args);
+		}),
 	resolveInstallFilters: (lockDir: string, packageName: string) =>
 		Effect.gen(function* () {
 			const allPackages =

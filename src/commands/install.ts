@@ -3,6 +3,7 @@ import { type Command, FileSystem, Path } from '@effect/platform';
 import { Console, Effect, Schema } from 'effect';
 import pc from 'picocolors';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
+import { filterOption } from '#src/lib/filter-option.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
@@ -80,11 +81,6 @@ const sureOption = cli.Options.boolean('sure').pipe(
 	cli.Options.withDefault(false),
 );
 
-const filterOption = cli.Options.text('filter').pipe(
-	cli.Options.withAlias('F'),
-	cli.Options.repeated,
-);
-
 export const shouldConfirmRootInstall = (opts: {
 	ctx: MonorepoContext;
 	sure: boolean;
@@ -140,7 +136,10 @@ const installHandler = (args: {
 		const filters = Array.from(args.filter);
 
 		if (filters.length > 0) {
-			const cmd = pm.buildFilteredInstallCommand(filters, installOverride);
+			const cmd = yield* pm.buildFilteredInstallCommand(
+				filters,
+				installOverride,
+			);
 			yield* Console.log(
 				`Running: ${pm.name} install with filters: ${filters.join(', ')} (cmd: ${pc.gray(renderCommand(cmd))})`,
 			);
@@ -153,7 +152,7 @@ const installHandler = (args: {
 				ctx.lockDir,
 				ctx.packageName,
 			);
-			const cmd = pm.buildFilteredInstallCommand(
+			const cmd = yield* pm.buildFilteredInstallCommand(
 				scopedFilters,
 				installOverride,
 			);
