@@ -29,9 +29,7 @@ __pm_workspace_packages() {
 if (( $+functions[_pm_zsh_completions] )); then
   functions[_pm_zsh_completions_base]=$functions[_pm_zsh_completions];
   _pm_zsh_completions() {
-    if [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]]; then
-      compadd -- \${(f)"$(__pm_workspace_packages)"};
-    elif [[ $words[2] == cd ]] && (( CURRENT == 3 )); then
+    if [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]] || { [[ $words[2] == cd ]] && (( CURRENT == 3 )); }; then
       compadd -- \${(f)"$(__pm_workspace_packages)"};
     else
       _pm_zsh_completions_base "$@";
@@ -46,11 +44,7 @@ __pm_workspace_packages() {
 };
 _pm_custom_completions() {
   local prev="\${COMP_WORDS[COMP_CWORD-1]}";
-  if [[ "$prev" == "-F" || "$prev" == "--filter" ]]; then
-    COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
-    return;
-  fi;
-  if [[ "\${COMP_WORDS[1]}" == "cd" ]] && [[ $COMP_CWORD -eq 2 ]]; then
+  if [[ "$prev" == "-F" || "$prev" == "--filter" ]] || { [[ "\${COMP_WORDS[1]}" == "cd" ]] && [[ $COMP_CWORD -eq 2 ]]; }; then
     COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
     return;
   fi;
