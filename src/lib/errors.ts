@@ -24,3 +24,27 @@ export class PackageNotFoundError extends Data.TaggedError(
 		});
 	}
 }
+
+export class UnsupportedFilterSelectorError extends Data.TaggedError(
+	'UnsupportedFilterSelectorError',
+)<{
+	message: string;
+}> {
+	constructor(selector: string) {
+		super({
+			message: `npm doesn't support the filter selector "${selector}". npm's -w only accepts a workspace name or a directory path — no globs, relational traversal ("...", "^"), or "!" exclusion.`,
+		});
+	}
+}
+
+export class UnsupportedFilterOperationError extends Data.TaggedError(
+	'UnsupportedFilterOperationError',
+)<{
+	message: string;
+}> {
+	constructor(pmName: string, operation: string) {
+		super({
+			message: `${pmName} doesn't support -F/--filter on \`${pmName} ${operation}\`.`,
+		});
+	}
+}

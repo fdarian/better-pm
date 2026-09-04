@@ -1,7 +1,7 @@
 import * as cli from '@effect/cli';
-import { Command as ShellCommand } from '@effect/platform';
-import { Console, Effect } from 'effect';
-import { runShellCommand } from '#src/commands/run-shell-command.ts';
+import { Effect } from 'effect';
+import { filterOption } from '#src/commands/filter-option.ts';
+import { runFilteredCommand } from '#src/commands/run-filtered-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
@@ -19,6 +19,7 @@ const updateHandler = (args: {
 	i: boolean;
 	latest: boolean;
 	args: ReadonlyArray<string>;
+	filter: ReadonlyArray<string>;
 }) =>
 	Effect.gen(function* () {
 		const pm = yield* PackageManagerService;
@@ -26,19 +27,28 @@ const updateHandler = (args: {
 		if (args.i) extraArgs.push('-i');
 		if (args.latest) extraArgs.push('--latest');
 		extraArgs.push(...Array.from(args.args));
-		const cmd = ShellCommand.make(pm.name, 'update', ...extraArgs);
-		yield* Console.log(`Running: ${pm.name} update ${extraArgs.join(' ')}`);
-		yield* runShellCommand(cmd);
+		const filters = Array.from(args.filter);
+		yield* runFilteredCommand(pm, 'update', ['update'], filters, extraArgs);
 	}).pipe(Effect.provide(PackageManagerLayer));
 
 export const upCmd = cli.Command.make(
 	'up',
-	{ i: interactiveOption, latest: latestOption, args: argsArg },
+	{
+		i: interactiveOption,
+		latest: latestOption,
+		args: argsArg,
+		filter: filterOption,
+	},
 	updateHandler,
 );
 
 export const updateCmd = cli.Command.make(
 	'update',
-	{ i: interactiveOption, latest: latestOption, args: argsArg },
+	{
+		i: interactiveOption,
+		latest: latestOption,
+		args: argsArg,
+		filter: filterOption,
+	},
 	updateHandler,
 );

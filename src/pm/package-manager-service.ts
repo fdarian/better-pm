@@ -6,13 +6,23 @@ import {
 import type { PlatformError } from '@effect/platform/Error';
 import { Context, Effect, Schema } from 'effect';
 import type { ParseError } from 'effect/ParseResult';
+import type {
+	UnsupportedFilterOperationError,
+	UnsupportedFilterSelectorError,
+} from '#src/lib/errors.ts';
+import type { FilterSpec } from '#src/pm/filter-argv.ts';
 import type { CommandOverride } from '#src/project/config.ts';
+
+type FilterCommandError =
+	| UnsupportedFilterSelectorError
+	| UnsupportedFilterOperationError;
 
 export class PackageManagerService extends Context.Tag('PackageManagerService')<
 	PackageManagerService,
 	{
 		readonly lockDir: string;
 		readonly name: string;
+		readonly filterSpec: FilterSpec;
 		readonly detectHasWorkspaces: (
 			lockDir: string,
 		) => Effect.Effect<
@@ -33,16 +43,18 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 		readonly buildFilteredInstallCommand: (
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => ShellCommand.Command;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly buildAddCommand: (
 			packages: Array<string>,
 			dev: boolean,
+			filters: Array<string>,
 			override?: CommandOverride,
-		) => ShellCommand.Command;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly buildRemoveCommand: (
 			packages: Array<string>,
+			filters: Array<string>,
 			override?: CommandOverride,
-		) => ShellCommand.Command;
+		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
 		readonly resolveInstallFilters: (
 			lockDir: string,
 			packageName: string,

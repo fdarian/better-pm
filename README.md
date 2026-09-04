@@ -36,7 +36,6 @@ eval "$(pm activate zsh)"  # or bash
 
 ```
 pm i                     Install
-pm i -F <pkg>            Install specific workspace package(s)
 pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
 pm ls                    List workspace packages (passthrough to the underlying package manager)
@@ -46,10 +45,12 @@ pm <script>               Shorthand for pm run
 pm exec <cmd>             Run a locally installed binary
 ```
 
-`-F` chains, so you can target multiple workspace packages in one go:
+Add `-F`/`--filter <pkg>` to `i`, `add`, `remove`, `run`, `up`/`update`, `exec`, `why`, `unlink`, or `ls` to scope it to specific workspace package(s), mirroring pnpm's `-F`. It chains, so you can target multiple packages in one go, and it works with the `pm <script>` shorthand too. Not available on `link`, `x`, `cd`, or `activate` — and bun doesn't support it on `exec`/`why`/`unlink`/`ls` either, so those fail loudly rather than silently ignoring the flag:
 
 ```bash
 pm i -F @myapp/web -F @myapp/api
+pm add -F @myapp/web lodash
+pm -F @myapp/web dev
 ```
 
 ## Configuration
@@ -109,6 +110,22 @@ Jump to any package directory (requires [shell integration](#install)):
 pm cd @myapp/web    # cd into a workspace package
 pm cd               # cd to monorepo root
 ```
+
+## Development
+
+```sh
+pnpm install
+bun run check:tsc
+bun entries/cli.ts i
+```
+
+To test shell integration and tab-completion (`pm cd`, `-F/--filter`) against local source instead of the installed `pm`, source the dev-activate script in your shell:
+
+```sh
+. scripts/dev-activate.sh
+```
+
+This points `pm` at this repo's source for the current shell session only.
 
 ## Neovim
 
