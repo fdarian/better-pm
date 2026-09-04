@@ -38,3 +38,5 @@ pnpm install
 bun run check:tsc
 bun entries/cli.ts i
 ```
+
+Never import the `@effect/platform-bun` root barrel from code that runs under vitest/node (e.g. test files) — it eagerly re-exports `BunRedis`, which needs the `bun` npm package and throws `Cannot find package 'bun'` at import time, before any test runs. Deep-import the submodule instead, e.g. `@effect/platform-bun/BunFileSystem` (see `src/pm/pnpm.test.ts`).
