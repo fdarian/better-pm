@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.changeset/**']
+    paths: [".changeset/**"]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -17,14 +17,17 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/setup@v2
+        with:
+          cache: false
+          install: false
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
-          package-manager-cache: false  # never use caching in release builds - uses: oven-sh/setup-bun@v2
+          node-version: "24"
+          package-manager-cache: false # never use caching in release builds - uses: oven-sh/setup-bun@v2
 
       - uses: oven-sh/setup-bun@v2
       - run: pnpm install --frozen-lockfile
