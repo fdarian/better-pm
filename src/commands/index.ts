@@ -1,4 +1,4 @@
-import { Command } from '@effect/cli';
+import { Command } from 'effect/unstable/cli';
 import { activateCmd } from './activate.ts';
 import { addCmd } from './add.ts';
 import { cdCmd } from './cd.ts';

@@ -1,6 +1,5 @@
-import * as cli from '@effect/cli';
-import { FileSystem, Path } from '@effect/platform';
-import { Console, Effect, Schema } from 'effect';
+import { Console, Effect, FileSystem, Path, Schema } from 'effect';
+import { Command, Flag, Prompt } from 'effect/unstable/cli';
 import pc from 'picocolors';
 import { filterOption } from '#src/commands/filter-option.ts';
 import { renderCommand } from '#src/commands/render-command.ts';
@@ -37,7 +36,9 @@ const findPackageJson = Effect.gen(function* () {
 	}
 
 	const content = yield* fs.readFileString(pkgPath.value);
-	const pkg = yield* Schema.decode(Schema.parseJson(PackageJson))(content);
+	const pkg = yield* Schema.decodeEffect(Schema.fromJsonString(PackageJson))(
+		content,
+	);
 	return { dir: path.dirname(pkgPath.value), name: pkg.name };
 });
 
@@ -77,9 +78,9 @@ const detectContext = Effect.gen(function* () {
 	} as MonorepoContext;
 });
 
-const sureOption = cli.Options.boolean('sure').pipe(
-	cli.Options.withAlias('y'),
-	cli.Options.withDefault(false),
+const sureOption = Flag.boolean('sure').pipe(
+	Flag.withAlias('y'),
+	Flag.withDefault(false),
 );
 
 export const shouldConfirmRootInstall = (opts: {
@@ -118,9 +119,9 @@ export const confirmRootInstall = (args: {
 			return false;
 		}
 
-		const confirmed = yield* cli.Prompt.confirm({
+		const confirmed = yield* Prompt.confirm({
 			message: 'Proceed with installing all packages?',
-		}).pipe(Effect.catchTag('QuitException', () => Effect.succeed(false)));
+		}).pipe(Effect.catchTag('QuitError', () => Effect.succeed(false)));
 		return confirmed;
 	});
 
@@ -186,13 +187,13 @@ const installHandler = (args: {
 		yield* runShellCommand(cmd);
 	}).pipe(Effect.provide(PackageManagerLayer));
 
-export const installCmd = cli.Command.make(
+export const installCmd = Command.make(
 	'i',
 	{ sure: sureOption, filter: filterOption },
 	installHandler,
 );
 
-export const installFullCmd = cli.Command.make(
+export const installFullCmd = Command.make(
 	'install',
 	{ sure: sureOption, filter: filterOption },
 	installHandler,

@@ -1,27 +1,28 @@
-import * as cli from '@effect/cli';
-import { Path } from '@effect/platform';
-import { Console, Effect, Option } from 'effect';
+import { Console, Effect, Option, Path } from 'effect';
+import { Argument, Command, Flag } from 'effect/unstable/cli';
 import { PackageNotFoundError } from '#src/lib/errors.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
-const packageNameArg = cli.Args.text({ name: 'package-name' }).pipe(
-	cli.Args.optional,
+const packageNameArg = Argument.string('package-name').pipe(Argument.optional);
+
+const completionsOption = Flag.boolean('completions').pipe(
+	Flag.withDefault(false),
 );
 
-const completionsOption = cli.Options.boolean('completions').pipe(
-	cli.Options.withDefault(false),
+const pathOption = Flag.boolean('path').pipe(
+	Flag.withAlias('p'),
+	Flag.withDefault(false),
 );
 
-const pathOption = cli.Options.boolean('path').pipe(
-	cli.Options.withAlias('p'),
-	cli.Options.withDefault(false),
-);
-
-export const cdCmd = cli.Command.make(
+export const cdCmd = Command.make(
 	'cd',
-	{ packageName: packageNameArg, completions: completionsOption, path: pathOption },
+	{
+		packageName: packageNameArg,
+		completions: completionsOption,
+		path: pathOption,
+	},
 	(args) =>
 		Effect.gen(function* () {
 			const pm = yield* PackageManagerService;

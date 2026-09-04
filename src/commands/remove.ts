@@ -1,5 +1,5 @@
-import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
+import { Argument, Command } from 'effect/unstable/cli';
 import { filterOption } from '#src/commands/filter-option.ts';
 import { renderCommand } from '#src/commands/render-command.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
@@ -7,11 +7,9 @@ import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { loadConfig, resolveCommandOverride } from '#src/project/config.ts';
 
-const packagesArg = cli.Args.text({ name: 'packages' }).pipe(
-	cli.Args.atLeast(1),
-);
+const packagesArg = Argument.string('packages').pipe(Argument.atLeast(1));
 
-export const removeCmd = cli.Command.make(
+export const removeCmd = Command.make(
 	'remove',
 	{ packages: packagesArg, filter: filterOption },
 	(args) =>

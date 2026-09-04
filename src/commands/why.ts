@@ -1,13 +1,13 @@
-import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
+import { Argument, Command } from 'effect/unstable/cli';
 import { filterOption } from '#src/commands/filter-option.ts';
 import { runFilteredCommand } from '#src/commands/run-filtered-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
-const argsArg = cli.Args.text({ name: 'args' }).pipe(cli.Args.repeated);
+const argsArg = Argument.string('args').pipe(Argument.variadic());
 
-export const whyCmd = cli.Command.make(
+export const whyCmd = Command.make(
 	'why',
 	{ args: argsArg, filter: filterOption },
 	(args) =>
