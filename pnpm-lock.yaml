@@ -32,7 +32,7 @@ importers:
         version: 0.27.0(effect@3.22.1)(vitest@4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(yaml@2.9.0)))
       '@types/bun':
         specifier: latest
-        version: 1.3.14
+        version: 1.4.0
       '@typescript/native-preview':
         specifier: ^7.0.0-dev.20260130.1
         version: 7.0.0-dev.20260707.2
@@ -45,19 +45,6 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(yaml@2.9.0))
-    optionalDependencies:
-      better-pm-darwin-arm64:
-        specifier: 0.3.6
-        version: 0.3.6
-      better-pm-darwin-x64:
-        specifier: 0.3.6
-        version: 0.3.6
-      better-pm-linux-arm64:
-        specifier: 0.3.6
-        version: 0.3.6
-      better-pm-linux-x64:
-        specifier: 0.3.6
-        version: 0.3.6
 
 packages:
 
@@ -515,8 +502,8 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@types/bun@1.3.14':
-    resolution: {integrity: sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw==}
+  '@types/bun@1.4.0':
+    resolution: {integrity: sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -755,32 +742,12 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  better-pm-darwin-arm64@0.3.6:
-    resolution: {integrity: sha512-y7FtpI//VLp/V2nyrcuQS93RvVzWxTKcAeMzPKbY92pLmv3LMO1dqeEIWQFzYXfkXZTk/G04wd/Ei9Xzv8hnRw==}
-    cpu: [arm64]
-    os: [darwin]
-
-  better-pm-darwin-x64@0.3.6:
-    resolution: {integrity: sha512-dJpjzbY76GHA49Ny8uSvBRY2OWGsKf0gX8SRNK7g4OZz+ArPL9Aan1jkhUtlPR3QDKWfyGyy1B1AZ0S8W5QpEg==}
-    cpu: [x64]
-    os: [darwin]
-
-  better-pm-linux-arm64@0.3.6:
-    resolution: {integrity: sha512-A84ZbkmJ0Eo7qM9CRK64DTeUZtH4HsTnUfIDY1bSlRksk9DXikzzAsulkffMgOcZ9j0PSRqBy4cg3BQ8a3jC6w==}
-    cpu: [arm64]
-    os: [linux]
-
-  better-pm-linux-x64@0.3.6:
-    resolution: {integrity: sha512-6auW3797od39NKWPSf0NjRc4KXmi1+APANkzUq5a/98fvWDZsomXt2XsfdbnVKKcwjGiXsFRbsiQK56IIXrk2A==}
-    cpu: [x64]
-    os: [linux]
-
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
-  bun-types@1.3.14:
-    resolution: {integrity: sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ==}
+  bun-types@1.4.0:
+    resolution: {integrity: sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q==}
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
@@ -1801,9 +1768,9 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@types/bun@1.3.14':
+  '@types/bun@1.4.0':
     dependencies:
-      bun-types: 1.3.14
+      bun-types: 1.4.0
 
   '@types/chai@5.2.3':
     dependencies:
@@ -1970,23 +1937,11 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  better-pm-darwin-arm64@0.3.6:
-    optional: true
-
-  better-pm-darwin-x64@0.3.6:
-    optional: true
-
-  better-pm-linux-arm64@0.3.6:
-    optional: true
-
-  better-pm-linux-x64@0.3.6:
-    optional: true
-
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
 
-  bun-types@1.3.14:
+  bun-types@1.4.0:
     dependencies:
       '@types/node': 26.2.0
 
