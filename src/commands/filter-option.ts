@@ -1,7 +1,7 @@
-import * as cli from '@effect/cli';
+import { Flag } from 'effect/unstable/cli';
 
 /** Shared `-F/--filter` CLI option, reused by every command that shells out to a package manager. */
-export const filterOption = cli.Options.text('filter').pipe(
-	cli.Options.withAlias('F'),
-	cli.Options.repeated,
+export const filterOption = Flag.string('filter').pipe(
+	Flag.withAlias('F'),
+	Flag.atLeast(0),
 );

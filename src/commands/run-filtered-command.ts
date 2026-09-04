@@ -1,5 +1,5 @@
-import { Command as ShellCommand } from '@effect/platform';
 import { Console, Effect } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import {
 	assembleFilteredArgv,
@@ -30,7 +30,7 @@ export const runFilteredCommand = (
 			filters,
 			trailingArgs,
 		);
-		const cmd = ShellCommand.make(pm.name, ...argv);
+		const cmd = ChildProcess.make(pm.name, argv);
 		yield* Console.log(`Running: ${pm.name} ${argv.join(' ')}`);
 		yield* runShellCommand(cmd);
 	});
