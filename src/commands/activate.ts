@@ -22,11 +22,17 @@ const shellWrapper = `pm() {
 };`;
 
 const zshCompletions = `eval "$(command pm --completions zsh)";
+# Emits workspace package names, one per line.
+__pm_workspace_packages() {
+  command pm cd --completions 2>/dev/null;
+};
 if (( $+functions[_pm_zsh_completions] )); then
   functions[_pm_zsh_completions_base]=$functions[_pm_zsh_completions];
   _pm_zsh_completions() {
-    if [[ $words[2] == cd ]] && (( CURRENT == 3 )); then
-      compadd -- \${(f)"$(command pm cd --completions 2>/dev/null)"};
+    if [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]]; then
+      compadd -- \${(f)"$(__pm_workspace_packages)"};
+    elif [[ $words[2] == cd ]] && (( CURRENT == 3 )); then
+      compadd -- \${(f)"$(__pm_workspace_packages)"};
     else
       _pm_zsh_completions_base "$@";
     fi;
@@ -34,16 +40,25 @@ if (( $+functions[_pm_zsh_completions] )); then
 fi;`;
 
 const bashCompletions = `eval "$(command pm --completions bash)";
+# Emits workspace package names, one per line.
+__pm_workspace_packages() {
+  command pm cd --completions 2>/dev/null;
+};
 _pm_custom_completions() {
+  local prev="\${COMP_WORDS[COMP_CWORD-1]}";
+  if [[ "$prev" == "-F" || "$prev" == "--filter" ]]; then
+    COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
+    return;
+  fi;
   if [[ "\${COMP_WORDS[1]}" == "cd" ]] && [[ $COMP_CWORD -eq 2 ]]; then
-    COMPREPLY=($(compgen -W "$(command pm cd --completions 2>/dev/null)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
+    COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
     return;
   fi;
   _pm_bash_completions;
 };
 complete -F _pm_custom_completions -o nosort -o bashdefault -o default pm;`;
 
-const completionsForShell = (shell: string) => {
+export const completionsForShell = (shell: string) => {
 	switch (shell) {
 		case 'zsh':
 			return zshCompletions;
