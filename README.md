@@ -39,7 +39,7 @@ pm i                     Install
 pm i -F <pkg>            Install specific workspace package(s)
 pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
-pm ls                    List workspace packages as a tree
+pm ls                    List workspace packages (passthrough to the underlying package manager)
 pm cd <pkg>              cd into a workspace package
 pm run <script>           Run a package.json script
 pm <script>               Shorthand for pm run
@@ -97,7 +97,7 @@ pm add "bun add -D @scope/pkg"       # scoped packages too
 
 ## Workspace navigation
 
-List all workspace packages as a tree:
+List workspace packages (runs `pnpm ls`/`bun pm ls`/`npm ls` under the hood):
 
 ```bash
 pm ls

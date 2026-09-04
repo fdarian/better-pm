@@ -20,7 +20,7 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 - `pm i` — Install with monorepo awareness (auto-filters in package dir, warns at root)
 - `pm add <packages...>` — Add packages (`-D` for dev)
 - `pm remove <packages...>` — Remove packages
-- `pm ls` — List workspace packages as tree
+- `pm ls` — List workspace packages (passthrough to `pnpm ls`/`bun pm ls`/`npm ls`)
 - `pm cd [package-name]` — Print package dir; shell wrapper via `activate` enables actual cd
 - `pm activate <shell>` — Output shell wrapper + completions (zsh/bash)
 
