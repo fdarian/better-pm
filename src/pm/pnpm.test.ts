@@ -1,7 +1,8 @@
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { BunFileSystem, BunPath } from '@effect/platform-bun';
+import * as BunFileSystem from '@effect/platform-bun/BunFileSystem';
+import * as BunPath from '@effect/platform-bun/BunPath';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { pnpmPackageManager } from './pnpm.ts';
