@@ -1,8 +1,9 @@
 import * as cli from '@effect/cli';
-import { type Command, FileSystem, Path } from '@effect/platform';
+import { FileSystem, Path } from '@effect/platform';
 import { Console, Effect, Schema } from 'effect';
 import pc from 'picocolors';
 import { filterOption } from '#src/commands/filter-option.ts';
+import { renderCommand } from '#src/commands/render-command.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { formatWorkspaceTree } from '#src/lib/format-workspace-tree.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
@@ -196,19 +197,3 @@ export const installFullCmd = cli.Command.make(
 	{ sure: sureOption, filter: filterOption },
 	installHandler,
 );
-
-// Minimal quoting helper (POSIX-ish; adjust for Windows / your needs)
-const shQuote = (s: string) =>
-	/^[A-Za-z0-9_./-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`;
-
-function renderCommand(cmd: Command.Command): string {
-	// Turn it into a plain JSON-ish object using the representation
-	const j = JSON.parse(JSON.stringify(cmd)) as any;
-
-	// Inspect the shape once in your project and adapt these field names:
-	// common shapes are like { command: "ls", args: ["-al"] } or similar.
-	const bin: string = j.command ?? j.name ?? j.process ?? '<unknown>';
-	const args: string[] = j.args ?? j.arguments ?? [];
-
-	return [bin, ...args].map(shQuote).join(' ');
-}

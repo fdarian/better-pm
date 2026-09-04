@@ -1,6 +1,7 @@
 import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
 import { filterOption } from '#src/commands/filter-option.ts';
+import { renderCommand } from '#src/commands/render-command.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
 import { resolveAddArgs } from '#src/lib/parse-pm-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
@@ -29,10 +30,7 @@ export const addCmd = cli.Command.make(
 				filters,
 				override,
 			);
-			const flag = resolved.dev ? ' -D' : '';
-			yield* Console.log(
-				`Running: ${pm.name} add${flag} ${resolved.packages.join(' ')}`,
-			);
+			yield* Console.log(`Running: ${renderCommand(cmd)}`);
 			yield* runShellCommand(cmd);
 		}).pipe(Effect.provide(PackageManagerLayer)),
 );
