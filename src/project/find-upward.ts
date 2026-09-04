@@ -1,5 +1,4 @@
-import { FileSystem, Path } from '@effect/platform';
-import { Config, Effect } from 'effect';
+import { Config, Effect, FileSystem, Path } from 'effect';
 
 /** Traverse up from cwd to find a file, stopping at home dir or filesystem root */
 export const findUpward = (filename: string) =>
