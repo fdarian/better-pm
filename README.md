@@ -111,6 +111,22 @@ pm cd @myapp/web    # cd into a workspace package
 pm cd               # cd to monorepo root
 ```
 
+## Development
+
+```sh
+pnpm install
+bun run check:tsc
+bun entries/cli.ts i
+```
+
+To test shell integration and tab-completion (`pm cd`, `-F/--filter`) against local source instead of the installed `pm`, source the dev-activate script in your shell:
+
+```sh
+. scripts/dev-activate.sh
+```
+
+This points `pm` at this repo's source for the current shell session only.
+
 ## Neovim
 
 A companion plugin opens workspace packages in [oil.nvim](https://github.com/stevearc/oil.nvim) via `:pm cd <package-name>` (a cmdline abbreviation for the underlying `:Pm` command). See [docs/nvim.md](docs/nvim.md).
