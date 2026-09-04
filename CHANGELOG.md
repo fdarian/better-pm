@@ -1,5 +1,19 @@
 # better-pm
 
+## 0.4.0
+
+### Minor Changes
+
+- 08620b2: Add `pm exec` proxy command (maps to pnpm exec / npm exec / bun x)
+- a38fb5b: Add `-F/--filter` to `i`, `add`, `remove`, `run`, `up`, `exec`, `why`, `unlink`, and `ls`, usable before or after the subcommand. Tab-completes workspace package names.
+- 40ce308: Add a Neovim plugin: `:pm cd <package-name>` opens a workspace package in [oil.nvim](https://github.com/stevearc/oil.nvim).
+- bf25e65: Add per-package-manager command override via `pm.config.json` (e.g. run `nub install` instead of `pnpm install`).
+- 17cce09: Add support for [nub](https://nubjs.com/docs), detected via `nub.lock`. Uses pnpm's CLI selector grammar (`-F`, `${pkg}...`) for filtered installs and `nub x` for the `pm x` passthrough.
+
+### Patch Changes
+
+- aa9aa94: Prepare config file
+
 ## 0.3.6
 
 ### Patch Changes
