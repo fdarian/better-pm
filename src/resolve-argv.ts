@@ -29,19 +29,35 @@ export function resolveArgv(
 	argv: readonly string[],
 	knownCommands: ReadonlySet<string>,
 ): readonly string[] {
-	// Look past any leading -F/--filter flags to find the token that would be
-	// the subcommand name — but `run` must land right at argv[2], since
-	// Command.run only recognizes a subcommand in that exact position. Any
-	// filter flags that preceded the script token end up after `run`, where
-	// its own `filter` option picks them up.
+	// Look past any leading -F/--filter flags to find the token that names the
+	// subcommand (or, for the bare-script shorthand, would-be subcommand) —
+	// but @effect/cli's Command.run only recognizes a subcommand sitting right
+	// at argv[2]. Whichever token belongs there gets hoisted into that spot,
+	// with the scanned filter flags (and their values) re-emitted right after
+	// it, where that subcommand's own `filter` option picks them up.
 	const scriptIndex = skipLeadingFilterFlags(argv, 2);
 	const scriptToken = argv[scriptIndex];
-	if (
-		scriptToken &&
-		!scriptToken.startsWith('-') &&
-		!knownCommands.has(scriptToken)
-	) {
-		return [...argv.slice(0, 2), 'run', ...argv.slice(2)];
+	if (scriptToken === undefined || scriptToken.startsWith('-')) {
+		return argv;
 	}
-	return argv;
+
+	const leadingFilterArgs = argv.slice(2, scriptIndex);
+	const remainingArgs = argv.slice(scriptIndex + 1);
+
+	if (knownCommands.has(scriptToken)) {
+		return [
+			...argv.slice(0, 2),
+			scriptToken,
+			...leadingFilterArgs,
+			...remainingArgs,
+		];
+	}
+
+	return [
+		...argv.slice(0, 2),
+		'run',
+		...leadingFilterArgs,
+		scriptToken,
+		...remainingArgs,
+	];
 }
