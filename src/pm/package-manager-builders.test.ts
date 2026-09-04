@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { describe, expect, it } from 'vitest';
 import { bunPackageManager } from './bun.ts';
 import { assembleFilteredArgv } from './filter-argv.ts';
@@ -6,12 +7,20 @@ import { npmPackageManager } from './npm.ts';
 import { nubPackageManager } from './nub.ts';
 import { pnpmPackageManager } from './pnpm.ts';
 
+/**
+ * `ChildProcess.Command` is itself an `Effect`, and its prototype's `toJSON`
+ * (from `Effectable`) reports the generic `{ _id: "Effect", op }` shape
+ * instead of the command's own fields — so `JSON.stringify` can't be used to
+ * inspect it. Read the `StandardCommand` fields directly instead.
+ */
 const serializeCommand = (command: unknown) => {
-	const json = JSON.parse(JSON.stringify(command)) as {
-		command?: string;
-		args?: Array<string>;
-	};
-	return { command: json.command, args: json.args };
+	if (
+		!ChildProcess.isCommand(command) ||
+		!ChildProcess.isStandardCommand(command)
+	) {
+		throw new Error('Expected a StandardCommand');
+	}
+	return { command: command.command, args: [...command.args] };
 };
 
 const run = (effect: Effect.Effect<unknown, unknown>) =>
