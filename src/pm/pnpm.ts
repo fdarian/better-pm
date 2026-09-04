@@ -1,5 +1,5 @@
-import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
-import { Effect } from 'effect';
+import { Effect, FileSystem, Path } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { assembleFilteredArgv, type FilterSpec } from '#src/pm/filter-argv.ts';
 import { enumerateWorkspacePackages } from '#src/pm/package-manager-service.ts';
 import type { CommandOverride } from '#src/project/config.ts';
@@ -42,7 +42,7 @@ export const pnpmPackageManager = {
 	buildInstallCommand: (override?: CommandOverride) => {
 		const bin = override?.bin ?? PM_NAME;
 		const sub = override?.subcommand ?? ['install'];
-		return ShellCommand.make(bin, ...sub);
+		return ChildProcess.make(bin, sub);
 	},
 	buildFilteredInstallCommand: (
 		filters: Array<string>,
@@ -58,7 +58,7 @@ export const pnpmPackageManager = {
 				sub,
 				filters,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	buildAddCommand: (
 		packages: Array<string>,
@@ -78,7 +78,7 @@ export const pnpmPackageManager = {
 				filters,
 				trailingArgs,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	buildRemoveCommand: (
 		packages: Array<string>,
@@ -96,7 +96,7 @@ export const pnpmPackageManager = {
 				filters,
 				packages,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	resolveInstallFilters: (_lockDir: string, packageName: string) =>
 		Effect.succeed([`${packageName}...`]),

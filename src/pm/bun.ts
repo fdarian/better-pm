@@ -1,5 +1,5 @@
-import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
-import { Effect, Schema } from 'effect';
+import { Effect, FileSystem, Path, Schema } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { assembleFilteredArgv, type FilterSpec } from '#src/pm/filter-argv.ts';
 import {
 	collectWorkspaceDependencies,
@@ -36,8 +36,8 @@ export const bunPackageManager = {
 			const exists = yield* fs.exists(pkgPath);
 			if (!exists) return false;
 			const content = yield* fs.readFileString(pkgPath);
-			const pkg = yield* Schema.decode(
-				Schema.parseJson(PackageJsonWithWorkspaces),
+			const pkg = yield* Schema.decodeEffect(
+				Schema.fromJsonString(PackageJsonWithWorkspaces),
 			)(content);
 			return pkg.workspaces !== undefined && pkg.workspaces.length > 0;
 		}),
@@ -48,8 +48,8 @@ export const bunPackageManager = {
 			const content = yield* fs.readFileString(
 				path.join(lockDir, 'package.json'),
 			);
-			const pkg = yield* Schema.decode(
-				Schema.parseJson(PackageJsonWithWorkspaces),
+			const pkg = yield* Schema.decodeEffect(
+				Schema.fromJsonString(PackageJsonWithWorkspaces),
 			)(content);
 			const globs = pkg.workspaces ?? [];
 			return yield* enumerateWorkspacePackages(lockDir, globs);
@@ -57,7 +57,7 @@ export const bunPackageManager = {
 	buildInstallCommand: (override?: CommandOverride) => {
 		const bin = override?.bin ?? PM_NAME;
 		const sub = override?.subcommand ?? ['install'];
-		return ShellCommand.make(bin, ...sub);
+		return ChildProcess.make(bin, sub);
 	},
 	buildFilteredInstallCommand: (
 		filters: Array<string>,
@@ -73,7 +73,7 @@ export const bunPackageManager = {
 				sub,
 				filters,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	buildAddCommand: (
 		packages: Array<string>,
@@ -93,7 +93,7 @@ export const bunPackageManager = {
 				filters,
 				trailingArgs,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	buildRemoveCommand: (
 		packages: Array<string>,
@@ -111,7 +111,7 @@ export const bunPackageManager = {
 				filters,
 				packages,
 			);
-			return ShellCommand.make(bin, ...args);
+			return ChildProcess.make(bin, args);
 		}),
 	resolveInstallFilters: (lockDir: string, packageName: string) =>
 		Effect.gen(function* () {

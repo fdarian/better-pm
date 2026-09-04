@@ -1,5 +1,5 @@
-import { FileSystem, Path, Command as ShellCommand } from '@effect/platform';
-import { Effect, Schema } from 'effect';
+import { Effect, FileSystem, Path, Schema } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { assembleFilteredArgv, type FilterSpec } from '#src/pm/filter-argv.ts';
 import {
 	enumerateWorkspacePackages,
@@ -31,8 +31,8 @@ export const nubPackageManager = {
 			const exists = yield* fs.exists(pkgPath);
 			if (!exists) return false;
 			const content = yield* fs.readFileString(pkgPath);
-			const pkg = yield* Schema.decode(
-				Schema.parseJson(PackageJsonWithWorkspaces),
+			const pkg = yield* Schema.decodeEffect(
+				Schema.fromJsonString(PackageJsonWithWorkspaces),
 			)(content);
 			return pkg.workspaces !== undefined && pkg.workspaces.length > 0;
 		}),
@@ -43,13 +43,13 @@ export const nubPackageManager = {
 			const content = yield* fs.readFileString(
 				path.join(lockDir, 'package.json'),
 			);
-			const pkg = yield* Schema.decode(
-				Schema.parseJson(PackageJsonWithWorkspaces),
+			const pkg = yield* Schema.decodeEffect(
+				Schema.fromJsonString(PackageJsonWithWorkspaces),
 			)(content);
 			const globs = pkg.workspaces ?? [];
 			return yield* enumerateWorkspacePackages(lockDir, globs);
 		}),
-	buildInstallCommand: () => ShellCommand.make(PM_NAME, 'install'),
+	buildInstallCommand: () => ChildProcess.make(PM_NAME, ['install']),
 	buildFilteredInstallCommand: (filters: Array<string>) =>
 		Effect.gen(function* () {
 			const args = yield* assembleFilteredArgv(
@@ -59,7 +59,7 @@ export const nubPackageManager = {
 				['install'],
 				filters,
 			);
-			return ShellCommand.make(PM_NAME, ...args);
+			return ChildProcess.make(PM_NAME, args);
 		}),
 	buildAddCommand: (
 		packages: Array<string>,
@@ -76,7 +76,7 @@ export const nubPackageManager = {
 				filters,
 				trailingArgs,
 			);
-			return ShellCommand.make(PM_NAME, ...args);
+			return ChildProcess.make(PM_NAME, args);
 		}),
 	buildRemoveCommand: (packages: Array<string>, filters: Array<string>) =>
 		Effect.gen(function* () {
@@ -88,7 +88,7 @@ export const nubPackageManager = {
 				filters,
 				packages,
 			);
-			return ShellCommand.make(PM_NAME, ...args);
+			return ChildProcess.make(PM_NAME, args);
 		}),
 	resolveInstallFilters: (_lockDir: string, packageName: string) =>
 		Effect.succeed([`${packageName}...`]),
