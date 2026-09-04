@@ -31,10 +31,10 @@ export function resolveArgv(
 ): readonly string[] {
 	// Look past any leading -F/--filter flags to find the token that names the
 	// subcommand (or, for the bare-script shorthand, would-be subcommand) —
-	// but @effect/cli's Command.run only recognizes a subcommand sitting right
-	// at argv[2]. Whichever token belongs there gets hoisted into that spot,
-	// with the scanned filter flags (and their values) re-emitted right after
-	// it, where that subcommand's own `filter` option picks them up.
+	// but effect/unstable/cli's Command.runWith only recognizes a subcommand
+	// sitting right at argv[2]. Whichever token belongs there gets hoisted into
+	// that spot, with the scanned filter flags (and their values) re-emitted
+	// right after it, where that subcommand's own `filter` option picks them up.
 	const scriptIndex = skipLeadingFilterFlags(argv, 2);
 	const scriptToken = argv[scriptIndex];
 	if (scriptToken === undefined || scriptToken.startsWith('-')) {
