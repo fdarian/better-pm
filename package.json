@@ -22,15 +22,9 @@
 		"format": "biome check --write",
 		"check:tsc": "tsgo --noEmit",
 		"build": "bun scripts/build-npm.ts",
-		"ci:version": "pnpm exec changeset version && bun scripts/sync-versions.ts && pnpm install --lockfile-only",
+		"ci:version": "pnpm exec changeset version && pnpm install --lockfile-only",
 		"ci:release": "bun run build && bun scripts/publish-npm.ts",
 		"test": "vitest run"
-	},
-	"optionalDependencies": {
-		"better-pm-darwin-arm64": "0.4.0",
-		"better-pm-darwin-x64": "0.4.0",
-		"better-pm-linux-x64": "0.4.0",
-		"better-pm-linux-arm64": "0.4.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.14",
