@@ -38,14 +38,37 @@ for (const platform of platforms) {
 	}
 }
 
-const changesetPublish = Bun.spawn(['pnpm', 'exec', 'changeset', 'publish'], {
-	cwd: repoRoot,
-	stdout: 'inherit',
-	stderr: 'inherit',
-});
+// The platform packages above are only published (or confirmed already
+// published) at this point, so root package.json can't declare them as
+// optionalDependencies any earlier in the pipeline — pnpm would fail to
+// resolve them. Inject the pin here, directly into the tarball that
+// `changeset publish` ships, then restore the working tree regardless of
+// outcome.
+const packageJsonPath = join(repoRoot, 'package.json');
+const originalPackageJson = await Bun.file(packageJsonPath).text();
+const packageJson = JSON.parse(originalPackageJson);
 
-const changesetExitCode = await changesetPublish.exited;
+packageJson.optionalDependencies = Object.fromEntries(
+	platforms.map((platform) => [`better-pm-${platform}`, packageJson.version]),
+);
 
-if (changesetExitCode !== 0) {
-	throw new Error('Failed to run changeset publish');
+await Bun.write(
+	packageJsonPath,
+	JSON.stringify(packageJson, null, '\t') + '\n',
+);
+
+try {
+	const changesetPublish = Bun.spawn(['pnpm', 'exec', 'changeset', 'publish'], {
+		cwd: repoRoot,
+		stdout: 'inherit',
+		stderr: 'inherit',
+	});
+
+	const changesetExitCode = await changesetPublish.exited;
+
+	if (changesetExitCode !== 0) {
+		throw new Error('Failed to run changeset publish');
+	}
+} finally {
+	await Bun.write(packageJsonPath, originalPackageJson);
 }
