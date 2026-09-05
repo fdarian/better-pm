@@ -58,11 +58,19 @@ await Bun.write(
 );
 
 try {
-	const changesetPublish = Bun.spawn(['pnpm', 'exec', 'changeset', 'publish'], {
-		cwd: repoRoot,
-		stdout: 'inherit',
-		stderr: 'inherit',
-	});
+	// Must not go through `pnpm exec`/`pnpm run`: pnpm verifies pnpm-lock.yaml
+	// is in sync with package.json before launching a subprocess, and the
+	// optionalDependencies pin above is deliberately absent from the lockfile
+	// at this point. Any pnpm-launched process would abort with
+	// ERR_PNPM_OUTDATED_LOCKFILE, so call the installed binary directly.
+	const changesetPublish = Bun.spawn(
+		[join(repoRoot, 'node_modules', '.bin', 'changeset'), 'publish'],
+		{
+			cwd: repoRoot,
+			stdout: 'inherit',
+			stderr: 'inherit',
+		},
+	);
 
 	const changesetExitCode = await changesetPublish.exited;
 
