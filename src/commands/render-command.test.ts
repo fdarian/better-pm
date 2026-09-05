@@ -1,5 +1,5 @@
-import { Command as ShellCommand } from '@effect/platform';
 import { Effect } from 'effect';
+import { ChildProcess } from 'effect/unstable/process';
 import { describe, expect, it } from 'vitest';
 import { bunPackageManager } from '#src/pm/bun.ts';
 import { npmPackageManager } from '#src/pm/npm.ts';
@@ -8,20 +8,20 @@ import { renderCommand } from './render-command.ts';
 
 describe('renderCommand', () => {
 	it('renders a plain command and its args as a shell string', () => {
-		expect(renderCommand(ShellCommand.make('pnpm', 'add', 'lodash'))).toBe(
+		expect(renderCommand(ChildProcess.make('pnpm', ['add', 'lodash']))).toBe(
 			'pnpm add lodash',
 		);
 	});
 
 	it('quotes args containing shell-significant characters', () => {
-		expect(renderCommand(ShellCommand.make('pnpm', 'run', 'a b'))).toBe(
+		expect(renderCommand(ChildProcess.make('pnpm', ['run', 'a b']))).toBe(
 			"pnpm run 'a b'",
 		);
 	});
 
 	it('throws for a piped command, which it does not support', () => {
-		const piped = ShellCommand.make('echo', 'hi').pipe(
-			ShellCommand.pipeTo(ShellCommand.make('cat')),
+		const piped = ChildProcess.make('echo', ['hi']).pipe(
+			ChildProcess.pipeTo(ChildProcess.make('cat')),
 		);
 		expect(() => renderCommand(piped)).toThrow('PipedCommand is not supported');
 	});

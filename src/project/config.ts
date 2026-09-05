@@ -1,12 +1,11 @@
 import * as os from 'node:os';
 import * as nodePath from 'node:path';
-import { FileSystem } from '@effect/platform';
-import { Effect, Schema } from 'effect';
+import { Effect, FileSystem, Schema } from 'effect';
 
-const PmOverrides = Schema.Record({
-	key: Schema.String,
-	value: Schema.Record({ key: Schema.String, value: Schema.String }),
-});
+const PmOverrides = Schema.Record(
+	Schema.String,
+	Schema.Record(Schema.String, Schema.String),
+);
 
 const PmConfig = Schema.Struct({
 	scopedInstall: Schema.optional(Schema.Boolean),
@@ -40,7 +39,7 @@ const readConfigFile = (configPath: string) =>
 		if (!exists) return {} as PmConfig;
 
 		const content = yield* fs.readFileString(configPath);
-		return yield* Schema.decode(Schema.parseJson(PmConfig))(content);
+		return yield* Schema.decodeEffect(Schema.fromJsonString(PmConfig))(content);
 	});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

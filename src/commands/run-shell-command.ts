@@ -1,6 +1,6 @@
-import { Command as ShellCommand } from '@effect/platform';
 import { execSync, spawn } from 'child_process';
-import { Effect, HashMap, Option } from 'effect';
+import { Effect } from 'effect';
+import type { ChildProcess } from 'effect/unstable/process';
 
 function getDescendantPids(pid: number): number[] {
 	if (process.platform === 'win32') return [];
@@ -35,10 +35,10 @@ function getOtherGroupDescendants(rootPid: number): number[] {
 	if (descendants.length === 0) return [];
 	try {
 		const allPids = [rootPid, ...descendants];
-		const output = execSync(
-			`ps -o pid=,pgid= -p ${allPids.join(',')}`,
-			{ encoding: 'utf-8', timeout: 3000 },
-		);
+		const output = execSync(`ps -o pid=,pgid= -p ${allPids.join(',')}`, {
+			encoding: 'utf-8',
+			timeout: 3000,
+		});
 		const rootPgid = rootPid; // detached child is its own process group leader
 		return output
 			.trim()
@@ -60,27 +60,23 @@ function getOtherGroupDescendants(rootPid: number): number[] {
  * (e.g. vite), avoiding signaling pnpm which would kill bun before it can clean up.
  * The exit cascades naturally: vite exits → bun exits → pnpm exits.
  */
-export const runShellCommand = (cmd: ShellCommand.Command) =>
+export const runShellCommand = (cmd: ChildProcess.Command) =>
 	Effect.uninterruptible(
-		Effect.async<number, Error>((resume) => {
-			if ('_tag' in cmd && cmd._tag !== 'StandardCommand') {
+		Effect.callback<number, Error>((resume) => {
+			if (cmd._tag !== 'StandardCommand') {
 				throw new Error(`PipedCommand is not supported`);
 			}
-			const standard = cmd as ShellCommand.StandardCommand;
-			const env = Object.fromEntries(HashMap.toEntries(standard.env));
-			const child = spawn(standard.command, standard.args as string[], {
+			const child = spawn(cmd.command, cmd.args as string[], {
 				stdio: 'inherit',
 				detached: true,
-				cwd: Option.getOrUndefined(standard.cwd),
-				env: { ...process.env, ...env },
-				shell: standard.shell,
+				cwd: cmd.options.cwd,
+				env: { ...process.env, ...cmd.options.env },
+				shell: cmd.options.shell,
 			});
 
 			if (child.pid === undefined) {
 				resume(
-					Effect.fail(
-						new Error(`Failed to spawn process: ${standard.command}`),
-					),
+					Effect.fail(new Error(`Failed to spawn process: ${cmd.command}`)),
 				);
 				return;
 			}
@@ -99,7 +95,9 @@ export const runShellCommand = (cmd: ShellCommand.Command) =>
 					// the child its own group leader). Sending SIGINT to the group (-pid) is
 					// equivalent to terminal Ctrl+C — it atomically signals every process in
 					// the group, unlike killTree which walks processes sequentially.
-					try { process.kill(-pid, 'SIGINT'); } catch {}
+					try {
+						process.kill(-pid, 'SIGINT');
+					} catch {}
 				}
 			};
 			process.on('SIGINT', forwardSigint);

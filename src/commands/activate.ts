@@ -1,7 +1,7 @@
-import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
+import { Argument, Command } from 'effect/unstable/cli';
 
-const shellArg = cli.Args.text({ name: 'shell' });
+const shellArg = Argument.string('shell');
 
 const shellWrapper = `pm() {
   if [ "$1" = "cd" ]; then
@@ -21,18 +21,22 @@ const shellWrapper = `pm() {
   fi;
 };`;
 
+// v4's `--completions` generator emits a self-contained script that defines
+// the completion function as \`_<executableName>\` (i.e. \`_pm\`), registered
+// via \`compdef\`/\`complete -F\` — unlike v3's \`_pm_zsh_completions\` /
+// \`_pm_bash_completions\` naming. Wrap that v4 function name instead.
 const zshCompletions = `eval "$(command pm --completions zsh)";
 # Emits workspace package names, one per line.
 __pm_workspace_packages() {
   command pm cd --completions 2>/dev/null;
 };
-if (( $+functions[_pm_zsh_completions] )); then
-  functions[_pm_zsh_completions_base]=$functions[_pm_zsh_completions];
-  _pm_zsh_completions() {
+if (( $+functions[_pm] )); then
+  functions[_pm_base]=$functions[_pm];
+  _pm() {
     if [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]] || { [[ $words[2] == cd ]] && (( CURRENT == 3 )); }; then
       compadd -- \${(f)"$(__pm_workspace_packages)"};
     else
-      _pm_zsh_completions_base "$@";
+      _pm_base "$@";
     fi;
   };
 fi;`;
@@ -48,7 +52,7 @@ _pm_custom_completions() {
     COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
     return;
   fi;
-  _pm_bash_completions;
+  _pm;
 };
 complete -F _pm_custom_completions -o nosort -o bashdefault -o default pm;`;
 
@@ -63,7 +67,7 @@ export const completionsForShell = (shell: string) => {
 	}
 };
 
-export const activateCmd = cli.Command.make(
+export const activateCmd = Command.make(
 	'activate',
 	{ shell: shellArg },
 	(args) =>

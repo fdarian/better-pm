@@ -1,5 +1,13 @@
-import { Terminal } from '@effect/platform';
-import { Effect, Exit, Layer, Mailbox, Option } from 'effect';
+import {
+	type Cause,
+	Effect,
+	FileSystem,
+	Layer,
+	Option,
+	Path,
+	Queue,
+	Terminal,
+} from 'effect';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { confirmRootInstall, shouldConfirmRootInstall } from './install.ts';
 
@@ -22,24 +30,41 @@ const makeUserInput = (
 });
 
 const makeTerminalLayer = (userInput: Terminal.UserInput) =>
-	Layer.succeed(Terminal.Terminal, {
-		columns: Effect.succeed(80),
-		rows: Effect.succeed(24),
-		isTTY: Effect.succeed(true),
-		readInput: Effect.gen(function* () {
-			const mailbox = yield* Mailbox.make<Terminal.UserInput>();
-			mailbox.unsafeOffer(userInput);
-			mailbox.unsafeDone(Exit.void);
-			return mailbox as Mailbox.ReadonlyMailbox<Terminal.UserInput>;
+	Layer.succeed(
+		Terminal.Terminal,
+		Terminal.make({
+			columns: Effect.succeed(80),
+			rows: Effect.succeed(24),
+			readInput: Effect.gen(function* () {
+				const queue = yield* Queue.make<Terminal.UserInput, Cause.Done>();
+				yield* Queue.offer(queue, userInput);
+				yield* Queue.end(queue);
+				return queue;
+			}),
+			display: () => Effect.void,
+			readLine: Effect.die('not implemented'),
 		}),
-		display: () => Effect.void,
-		readLine: Effect.die('not implemented'),
-	} satisfies Terminal.Terminal);
+	);
 
-const dummyTerminalLayer = makeTerminalLayer(makeUserInput('n'));
+// Prompt.confirm's Environment (FileSystem | Path | Terminal) is wider than
+// just Terminal, so the test layer provides no-op FileSystem/Path alongside
+// the mocked Terminal.
+const testLayer = (userInput: Terminal.UserInput) =>
+	Layer.mergeAll(
+		makeTerminalLayer(userInput),
+		FileSystem.layerNoop({}),
+		Path.layer,
+	);
 
-const runEffect = <A>(effect: Effect.Effect<A, unknown, Terminal.Terminal>) =>
-	Effect.runPromise(effect.pipe(Effect.provide(dummyTerminalLayer)));
+const dummyTerminalLayer = testLayer(makeUserInput('n'));
+
+const runEffect = <A>(
+	effect: Effect.Effect<
+		A,
+		unknown,
+		FileSystem.FileSystem | Path.Path | Terminal.Terminal
+	>,
+) => Effect.runPromise(effect.pipe(Effect.provide(dummyTerminalLayer)));
 
 describe('shouldConfirmRootInstall', () => {
 	const rootCtx = {
@@ -116,7 +141,7 @@ describe('confirmRootInstall', () => {
 		it('returns true when user confirms with y', async () => {
 			const result = await Effect.runPromise(
 				confirmRootInstall(emptyArgs).pipe(
-					Effect.provide(makeTerminalLayer(makeUserInput('y'))),
+					Effect.provide(testLayer(makeUserInput('y'))),
 				),
 			);
 			expect(result).toBe(true);
@@ -125,7 +150,7 @@ describe('confirmRootInstall', () => {
 		it('returns false when user declines with n', async () => {
 			const result = await Effect.runPromise(
 				confirmRootInstall(emptyArgs).pipe(
-					Effect.provide(makeTerminalLayer(makeUserInput('n'))),
+					Effect.provide(testLayer(makeUserInput('n'))),
 				),
 			);
 			expect(result).toBe(false);

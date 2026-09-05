@@ -1,5 +1,5 @@
-import * as cli from '@effect/cli';
 import { Console, Effect } from 'effect';
+import { Argument, Command, Flag } from 'effect/unstable/cli';
 import { filterOption } from '#src/commands/filter-option.ts';
 import { renderCommand } from '#src/commands/render-command.ts';
 import { runShellCommand } from '#src/commands/run-shell-command.ts';
@@ -8,13 +8,11 @@ import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 import { loadConfig, resolveCommandOverride } from '#src/project/config.ts';
 
-const devOption = cli.Options.boolean('D').pipe(cli.Options.withDefault(false));
+const devOption = Flag.boolean('D').pipe(Flag.withDefault(false));
 
-const packagesArg = cli.Args.text({ name: 'packages' }).pipe(
-	cli.Args.atLeast(1),
-);
+const packagesArg = Argument.string('packages').pipe(Argument.atLeast(1));
 
-export const addCmd = cli.Command.make(
+export const addCmd = Command.make(
 	'add',
 	{ dev: devOption, packages: packagesArg, filter: filterOption },
 	(args) =>

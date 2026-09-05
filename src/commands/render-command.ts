@@ -1,4 +1,4 @@
-import type { Command as ShellCommand } from '@effect/platform';
+import type { ChildProcess } from 'effect/unstable/process';
 
 /** Minimal POSIX-ish shell quoting, just enough to make a logged command copy-pasteable. */
 const shQuote = (arg: string) =>
@@ -10,7 +10,7 @@ const shQuote = (arg: string) =>
  * rather than reassembling a separate string — otherwise the two can drift
  * apart (e.g. a log line that forgets to mention `-F`/`--filter`).
  */
-export function renderCommand(cmd: ShellCommand.Command): string {
+export function renderCommand(cmd: ChildProcess.Command): string {
 	if (cmd._tag !== 'StandardCommand') {
 		throw new Error('PipedCommand is not supported');
 	}

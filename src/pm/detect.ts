@@ -1,5 +1,4 @@
-import { Path } from '@effect/platform';
-import { Effect } from 'effect';
+import { Effect, Path } from 'effect';
 import { NoPackageManagerDetectedError } from '#src/lib/errors.ts';
 import { bunPackageManager } from '#src/pm/bun.ts';
 import { npmPackageManager } from '#src/pm/npm.ts';

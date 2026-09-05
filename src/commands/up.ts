@@ -1,19 +1,15 @@
-import * as cli from '@effect/cli';
 import { Effect } from 'effect';
+import { Argument, Command, Flag } from 'effect/unstable/cli';
 import { filterOption } from '#src/commands/filter-option.ts';
 import { runFilteredCommand } from '#src/commands/run-filtered-command.ts';
 import { PackageManagerLayer } from '#src/pm/layer.ts';
 import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
-const interactiveOption = cli.Options.boolean('i').pipe(
-	cli.Options.withDefault(false),
-);
+const interactiveOption = Flag.boolean('i').pipe(Flag.withDefault(false));
 
-const latestOption = cli.Options.boolean('latest').pipe(
-	cli.Options.withDefault(false),
-);
+const latestOption = Flag.boolean('latest').pipe(Flag.withDefault(false));
 
-const argsArg = cli.Args.text({ name: 'args' }).pipe(cli.Args.repeated);
+const argsArg = Argument.string('args').pipe(Argument.variadic());
 
 const updateHandler = (args: {
 	i: boolean;
@@ -31,7 +27,7 @@ const updateHandler = (args: {
 		yield* runFilteredCommand(pm, 'update', ['update'], filters, extraArgs);
 	}).pipe(Effect.provide(PackageManagerLayer));
 
-export const upCmd = cli.Command.make(
+export const upCmd = Command.make(
 	'up',
 	{
 		i: interactiveOption,
@@ -42,7 +38,7 @@ export const upCmd = cli.Command.make(
 	updateHandler,
 );
 
-export const updateCmd = cli.Command.make(
+export const updateCmd = Command.make(
 	'update',
 	{
 		i: interactiveOption,

@@ -1,11 +1,13 @@
 import {
+	Context,
+	Effect,
 	FileSystem,
 	Path,
-	type Command as ShellCommand,
-} from '@effect/platform';
-import type { PlatformError } from '@effect/platform/Error';
-import { Context, Effect, Schema } from 'effect';
-import type { ParseError } from 'effect/ParseResult';
+	type PlatformError,
+	Schema,
+	SchemaTransformation,
+} from 'effect';
+import type { ChildProcess } from 'effect/unstable/process';
 import type {
 	UnsupportedFilterOperationError,
 	UnsupportedFilterSelectorError,
@@ -17,7 +19,7 @@ type FilterCommandError =
 	| UnsupportedFilterSelectorError
 	| UnsupportedFilterOperationError;
 
-export class PackageManagerService extends Context.Tag('PackageManagerService')<
+export class PackageManagerService extends Context.Service<
 	PackageManagerService,
 	{
 		readonly lockDir: string;
@@ -27,53 +29,57 @@ export class PackageManagerService extends Context.Tag('PackageManagerService')<
 			lockDir: string,
 		) => Effect.Effect<
 			boolean,
-			PlatformError | ParseError,
+			PlatformError.PlatformError | Schema.SchemaError,
 			FileSystem.FileSystem | Path.Path
 		>;
 		readonly listWorkspacePackages: (
 			lockDir: string,
 		) => Effect.Effect<
 			Array<{ name: string; relDir: string }>,
-			PlatformError | ParseError,
+			PlatformError.PlatformError | Schema.SchemaError,
 			FileSystem.FileSystem | Path.Path
 		>;
 		readonly buildInstallCommand: (
 			override?: CommandOverride,
-		) => ShellCommand.Command;
+		) => ChildProcess.Command;
 		readonly buildFilteredInstallCommand: (
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
+		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
 		readonly buildAddCommand: (
 			packages: Array<string>,
 			dev: boolean,
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
+		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
 		readonly buildRemoveCommand: (
 			packages: Array<string>,
 			filters: Array<string>,
 			override?: CommandOverride,
-		) => Effect.Effect<ShellCommand.Command, FilterCommandError>;
+		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
 		readonly resolveInstallFilters: (
 			lockDir: string,
 			packageName: string,
 		) => Effect.Effect<
 			Array<string>,
-			PlatformError | ParseError,
+			PlatformError.PlatformError | Schema.SchemaError,
 			FileSystem.FileSystem | Path.Path
 		>;
 	}
->() {}
+>()('PackageManagerService') {}
 
-export const PackageJsonWorkspacesField = Schema.Union(
+export const PackageJsonWorkspacesField = Schema.Union([
 	Schema.Array(Schema.String),
-	Schema.transform(
-		Schema.Struct({ packages: Schema.Array(Schema.String) }),
-		Schema.Array(Schema.String),
-		{ decode: (obj) => obj.packages, encode: (arr) => ({ packages: arr }) },
+	Schema.Struct({ packages: Schema.Array(Schema.String) }).pipe(
+		Schema.decodeTo(
+			Schema.Array(Schema.String),
+			SchemaTransformation.transform({
+				decode: (obj) => obj.packages,
+				encode: (arr) => ({ packages: arr }),
+			}),
+		),
 	),
-);
+]);
 
 const WorkspacePackageJson = Schema.Struct({
 	name: Schema.String,
@@ -83,9 +89,9 @@ const readPackageName = (pkgJsonPath: string) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const content = yield* fs.readFileString(pkgJsonPath);
-		return yield* Schema.decode(Schema.parseJson(WorkspacePackageJson))(
-			content,
-		);
+		return yield* Schema.decodeEffect(
+			Schema.fromJsonString(WorkspacePackageJson),
+		)(content);
 	}).pipe(Effect.option);
 
 export const enumerateWorkspacePackages = (
@@ -142,12 +148,8 @@ export const enumerateWorkspacePackages = (
 	});
 
 const PackageJsonWithDeps = Schema.Struct({
-	dependencies: Schema.optional(
-		Schema.Record({ key: Schema.String, value: Schema.String }),
-	),
-	devDependencies: Schema.optional(
-		Schema.Record({ key: Schema.String, value: Schema.String }),
-	),
+	dependencies: Schema.optional(Schema.Record(Schema.String, Schema.String)),
+	devDependencies: Schema.optional(Schema.Record(Schema.String, Schema.String)),
 });
 
 export const collectWorkspaceDependencies = (
@@ -166,7 +168,7 @@ export const collectWorkspaceDependencies = (
 			name: string,
 		): Effect.Effect<
 			void,
-			PlatformError | ParseError,
+			PlatformError.PlatformError | Schema.SchemaError,
 			FileSystem.FileSystem | Path.Path
 		> =>
 			Effect.gen(function* () {
@@ -177,9 +179,9 @@ export const collectWorkspaceDependencies = (
 
 				const pkgJsonPath = path.join(lockDir, relDir, 'package.json');
 				const content = yield* fs.readFileString(pkgJsonPath);
-				const pkg = yield* Schema.decode(Schema.parseJson(PackageJsonWithDeps))(
-					content,
-				);
+				const pkg = yield* Schema.decodeEffect(
+					Schema.fromJsonString(PackageJsonWithDeps),
+				)(content);
 
 				const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 				for (const [depName, version] of Object.entries(allDeps)) {
