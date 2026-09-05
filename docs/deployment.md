@@ -8,7 +8,7 @@
 4. Merging the PR triggers publish:
    - Builds binaries for 4 platforms (darwin-arm64, darwin-x64, linux-x64, linux-arm64)
    - Publishes platform-specific npm packages (`better-pm-{platform}`)
-   - Publishes the main `better-pm` package via `changeset publish`
+   - Pins those platform packages as `optionalDependencies` on the main package (only once they're actually published — see Scripts below) and publishes it via `changeset publish`
    - Uploads tar'd binaries to a GitHub Release
    - Updates the Homebrew formula in `fdarian/homebrew-tap`
 
@@ -26,5 +26,4 @@ The workflow can also be triggered manually via `workflow_dispatch` in the Actio
 ## Scripts
 
 - `scripts/build-npm.ts` — Compiles binaries and generates platform npm packages
-- `scripts/publish-npm.ts` — Publishes platform packages then runs changeset publish
-- `scripts/sync-versions.ts` — Syncs optionalDependencies versions with package version
+- `scripts/publish-npm.ts` — Publishes platform packages, then injects `optionalDependencies` (pinning them to the current version) into `package.json` just before `changeset publish`, restoring the original `package.json` afterward. Root `package.json` must never carry that block outside of this window — the platform packages aren't published yet earlier in the pipeline, and pnpm silently drops unresolvable optional deps instead of erroring, which produces a lockfile inconsistent with `package.json`
