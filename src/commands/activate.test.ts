@@ -11,6 +11,18 @@ describe('completionsForShell', () => {
 		expect(output).toContain('command pm cd --completions 2>/dev/null;');
 	});
 
+	it('zsh output completes current and single-filtered package scripts for run', () => {
+		const output = completionsForShell('zsh');
+		expect(output).toContain('__pm_run_scripts() {');
+		expect(output).toContain('command pm run --completions "$@" 2>/dev/null;');
+		expect(output).toContain(
+			'[[ $words[2] == run ]] && (( CURRENT == 3 ))',
+		);
+		expect(output).toContain(
+			'[[ $words[2] == "-F" ]] && [[ $words[4] == run ]] && (( CURRENT == 5 ))',
+		);
+	});
+
 	it('zsh output completes package names after -F/--filter or for cd via one combined condition', () => {
 		const output = completionsForShell('zsh');
 		expect(output).toContain(
@@ -28,6 +40,18 @@ describe('completionsForShell', () => {
 		const output = completionsForShell('bash');
 		expect(output).toContain('__pm_workspace_packages() {');
 		expect(output).toContain('command pm cd --completions 2>/dev/null;');
+	});
+
+	it('bash output completes current and single-filtered package scripts for run', () => {
+		const output = completionsForShell('bash');
+		expect(output).toContain('__pm_run_scripts() {');
+		expect(output).toContain('command pm run --completions "$@" 2>/dev/null;');
+		expect(output).toContain(
+			'[[ "${COMP_WORDS[1]}" == "run" ]] && [[ $COMP_CWORD -eq 2 ]]',
+		);
+		expect(output).toContain(
+			'[[ "${COMP_WORDS[1]}" == "-F" ]] && [[ "${COMP_WORDS[3]}" == "run" ]] && [[ $COMP_CWORD -eq 4 ]]',
+		);
 	});
 
 	it('bash output completes package names after -F/--filter or for cd via one combined condition', () => {
