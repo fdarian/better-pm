@@ -1,13 +1,13 @@
 import { Config, Effect, FileSystem, Path } from 'effect';
 
 /** Traverse up from cwd to find a file, stopping at home dir or filesystem root */
-export const findUpward = (filename: string) =>
+export const findUpward = (filename: string, startDir = process.cwd()) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
 		const homeDir = yield* Config.string('HOME');
 
-		let currentDir = process.cwd();
+		let currentDir = startDir;
 
 		while (true) {
 			const filePath = path.join(currentDir, filename);

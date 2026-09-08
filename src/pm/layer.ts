@@ -4,5 +4,5 @@ import { PackageManagerService } from '#src/pm/package-manager-service.ts';
 
 export const PackageManagerLayer = Layer.effect(
 	PackageManagerService,
-	detectPackageManager,
+	detectPackageManager(),
 );
