@@ -1,4 +1,4 @@
-import { Effect, Path } from 'effect';
+import { Effect, FileSystem, Path, Schema } from 'effect';
 import { NoPackageManagerDetectedError } from '#src/lib/errors.ts';
 import { bunPackageManager } from '#src/pm/bun.ts';
 import { npmPackageManager } from '#src/pm/npm.ts';
@@ -18,15 +18,77 @@ const LOCK_FILES: Array<{
 	{ file: 'nub.lock', implementation: nubPackageManager },
 ];
 
-export const detectPackageManager = Effect.gen(function* () {
-	const path = yield* Path.Path;
-
-	for (const lockFile of LOCK_FILES) {
-		const result = yield* findUpward(lockFile.file).pipe(Effect.option);
-		if (result._tag === 'Some') {
-			const lockDir = path.dirname(result.value);
-			return { ...lockFile.implementation, lockDir };
-		}
-	}
-	return yield* Effect.fail(new NoPackageManagerDetectedError());
+const PackageJsonWithPackageManager = Schema.Struct({
+	packageManager: Schema.optional(Schema.String),
 });
+
+const getPackageManagerImplementation = (packageManager: string) => {
+	const versionIndex = packageManager.lastIndexOf('@');
+	const packageManagerName =
+		versionIndex === -1
+			? packageManager
+			: packageManager.slice(0, versionIndex);
+
+	switch (packageManagerName) {
+		case 'pnpm':
+			return pnpmPackageManager;
+		case 'bun':
+			return bunPackageManager;
+		case 'npm':
+			return npmPackageManager;
+		case 'nub':
+			return nubPackageManager;
+	}
+};
+
+const getPackageManagerFromPackageJson = (packageJsonPath: string) =>
+	Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const content = yield* fs.readFileString(packageJsonPath);
+		const pkg = yield* Schema.decodeEffect(
+			Schema.fromJsonString(PackageJsonWithPackageManager),
+		)(content);
+		if (pkg.packageManager === undefined) return;
+		return getPackageManagerImplementation(pkg.packageManager);
+	});
+
+export const detectPackageManager = (startDir = process.cwd()) =>
+	Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const path = yield* Path.Path;
+
+		for (const lockFile of LOCK_FILES) {
+			const result = yield* findUpward(lockFile.file, startDir).pipe(
+				Effect.option,
+			);
+			if (result._tag === 'Some') {
+				const lockDir = path.dirname(result.value);
+				const rootPackageJsonPath = path.join(lockDir, 'package.json');
+				const rootPackageJsonExists = yield* fs.exists(rootPackageJsonPath);
+				if (rootPackageJsonExists) {
+					const implementation =
+						yield* getPackageManagerFromPackageJson(rootPackageJsonPath);
+					if (implementation !== undefined) {
+						return { ...implementation, lockDir };
+					}
+				}
+				return { ...lockFile.implementation, lockDir };
+			}
+		}
+
+		const packageJsonPath = yield* findUpward('package.json', startDir).pipe(
+			Effect.option,
+		);
+		if (packageJsonPath._tag === 'Some') {
+			const implementation = yield* getPackageManagerFromPackageJson(
+				packageJsonPath.value,
+			);
+			if (implementation !== undefined) {
+				return {
+					...implementation,
+					lockDir: path.dirname(packageJsonPath.value),
+				};
+			}
+		}
+		return yield* Effect.fail(new NoPackageManagerDetectedError());
+	});
