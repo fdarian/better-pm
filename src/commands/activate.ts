@@ -30,10 +30,20 @@ const zshCompletions = `eval "$(command pm --completions zsh)";
 __pm_workspace_packages() {
   command pm cd --completions 2>/dev/null;
 };
+# Emits script names from the current package, or one -F package.
+__pm_run_scripts() {
+  command pm run --completions "$@" 2>/dev/null;
+};
 if (( $+functions[_pm] )); then
   functions[_pm_base]=$functions[_pm];
   _pm() {
-    if [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]] || { [[ $words[2] == cd ]] && (( CURRENT == 3 )); }; then
+    if { [[ $words[2] == run ]] && (( CURRENT == 3 )); }; then
+      compadd -- \${(f)"$(__pm_run_scripts)"};
+    elif { [[ $words[2] == "-F" ]] && [[ $words[4] == run ]] && (( CURRENT == 5 )); }; then
+      compadd -- \${(f)"$(__pm_run_scripts -F \"$words[3]\")"};
+    elif { [[ $words[2] == run ]] && [[ $words[3] == "-F" ]] && (( CURRENT == 5 )); }; then
+      compadd -- \${(f)"$(__pm_run_scripts -F \"$words[4]\")"};
+    elif [[ $words[CURRENT-1] == "-F" || $words[CURRENT-1] == "--filter" ]] || { [[ $words[2] == cd ]] && (( CURRENT == 3 )); }; then
       compadd -- \${(f)"$(__pm_workspace_packages)"};
     else
       _pm_base "$@";
@@ -46,8 +56,24 @@ const bashCompletions = `eval "$(command pm --completions bash)";
 __pm_workspace_packages() {
   command pm cd --completions 2>/dev/null;
 };
+# Emits script names from the current package, or one -F package.
+__pm_run_scripts() {
+  command pm run --completions "$@" 2>/dev/null;
+};
 _pm_custom_completions() {
   local prev="\${COMP_WORDS[COMP_CWORD-1]}";
+  if [[ "\${COMP_WORDS[1]}" == "run" ]] && [[ $COMP_CWORD -eq 2 ]]; then
+    COMPREPLY=($(compgen -W "$(__pm_run_scripts)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
+    return;
+  fi;
+  if [[ "\${COMP_WORDS[1]}" == "-F" ]] && [[ "\${COMP_WORDS[3]}" == "run" ]] && [[ $COMP_CWORD -eq 4 ]]; then
+    COMPREPLY=($(compgen -W "$(__pm_run_scripts -F \"\${COMP_WORDS[2]}\")" -- "\${COMP_WORDS[$COMP_CWORD]}"));
+    return;
+  fi;
+  if [[ "\${COMP_WORDS[1]}" == "run" ]] && [[ "\${COMP_WORDS[2]}" == "-F" ]] && [[ $COMP_CWORD -eq 4 ]]; then
+    COMPREPLY=($(compgen -W "$(__pm_run_scripts -F \"\${COMP_WORDS[3]}\")" -- "\${COMP_WORDS[$COMP_CWORD]}"));
+    return;
+  fi;
   if [[ "$prev" == "-F" || "$prev" == "--filter" ]] || { [[ "\${COMP_WORDS[1]}" == "cd" ]] && [[ $COMP_CWORD -eq 2 ]]; }; then
     COMPREPLY=($(compgen -W "$(__pm_workspace_packages)" -- "\${COMP_WORDS[$COMP_CWORD]}"));
     return;
