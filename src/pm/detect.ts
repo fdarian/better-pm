@@ -18,6 +18,8 @@ const LOCK_FILES: Array<{
 	{ file: 'nub.lock', implementation: nubPackageManager },
 ];
 
+const LOCK_FILE_NAMES = LOCK_FILES.map((lockFile) => lockFile.file);
+
 const PackageJsonWithPackageManager = Schema.Struct({
 	packageManager: Schema.optional(Schema.String),
 });
@@ -57,23 +59,29 @@ export const detectPackageManager = (startDir = process.cwd()) =>
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
 
-		for (const lockFile of LOCK_FILES) {
-			const result = yield* findUpward(lockFile.file, startDir).pipe(
-				Effect.option,
-			);
-			if (result._tag === 'Some') {
-				const lockDir = path.dirname(result.value);
-				const rootPackageJsonPath = path.join(lockDir, 'package.json');
-				const rootPackageJsonExists = yield* fs.exists(rootPackageJsonPath);
-				if (rootPackageJsonExists) {
-					const implementation =
-						yield* getPackageManagerFromPackageJson(rootPackageJsonPath);
-					if (implementation !== undefined) {
-						return { ...implementation, lockDir };
-					}
+		const result = yield* findUpward(LOCK_FILE_NAMES, startDir).pipe(
+			Effect.option,
+		);
+		if (result._tag === 'Some') {
+			const lockDir = path.dirname(result.value);
+			const rootPackageJsonPath = path.join(lockDir, 'package.json');
+			const rootPackageJsonExists = yield* fs.exists(rootPackageJsonPath);
+			if (rootPackageJsonExists) {
+				const implementation =
+					yield* getPackageManagerFromPackageJson(rootPackageJsonPath);
+				if (implementation !== undefined) {
+					return { ...implementation, lockDir };
 				}
-				return { ...lockFile.implementation, lockDir };
 			}
+
+			const filename = path.basename(result.value);
+			const lockFile = LOCK_FILES.find(
+				(candidate) => candidate.file === filename,
+			);
+			if (lockFile === undefined) {
+				return yield* Effect.die(new Error(`Unknown lock file: ${filename}`));
+			}
+			return { ...lockFile.implementation, lockDir };
 		}
 
 		const packageJsonPath = yield* findUpward('package.json', startDir).pipe(

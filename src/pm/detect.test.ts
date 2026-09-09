@@ -75,4 +75,56 @@ describe('detectPackageManager', () => {
 		expect(packageManager.name).toBe('pnpm');
 		expect(packageManager.lockDir).toBe(tmpDir);
 	});
+
+	it('prefers the nearest lockfile over an ancestor lockfile with higher precedence', async () => {
+		const outerDir = path.join(tmpDir, 'outer');
+		const checkoutDir = path.join(outerDir, 'worktrees', 'inner');
+		const childDir = path.join(checkoutDir, 'packages', 'app');
+		await fs.mkdir(childDir, { recursive: true });
+		await fs.writeFile(path.join(outerDir, 'pnpm-lock.yaml'), '');
+		await fs.writeFile(path.join(checkoutDir, '.git'), 'gitdir: /tmp/inner');
+		await fs.writeFile(path.join(checkoutDir, 'bun.lock'), '');
+
+		const packageManager = await runDetectPackageManager(childDir);
+		expect(packageManager.name).toBe('bun');
+		expect(packageManager.lockDir).toBe(checkoutDir);
+	});
+
+	it('prefers a nearer lockfile before reaching an ancestor checkout', async () => {
+		const outerDir = path.join(tmpDir, 'outer');
+		const projectDir = path.join(outerDir, 'examples', 'bun-project');
+		const childDir = path.join(projectDir, 'packages', 'app');
+		await fs.mkdir(childDir, { recursive: true });
+		await fs.writeFile(path.join(outerDir, 'pnpm-lock.yaml'), '');
+		await fs.writeFile(path.join(projectDir, 'bun.lock'), '');
+
+		const packageManager = await runDetectPackageManager(childDir);
+		expect(packageManager.name).toBe('bun');
+		expect(packageManager.lockDir).toBe(projectDir);
+	});
+
+	it('keeps lockfile precedence when candidates are in the same directory', async () => {
+		const checkoutDir = path.join(tmpDir, 'checkout');
+		await fs.mkdir(checkoutDir, { recursive: true });
+		await fs.writeFile(path.join(checkoutDir, '.git'), 'gitdir: /tmp/checkout');
+		await fs.writeFile(path.join(checkoutDir, 'pnpm-lock.yaml'), '');
+		await fs.writeFile(path.join(checkoutDir, 'bun.lock'), '');
+
+		const packageManager = await runDetectPackageManager(checkoutDir);
+		expect(packageManager.name).toBe('pnpm');
+		expect(packageManager.lockDir).toBe(checkoutDir);
+	});
+
+	it('fails when the nearest checkout has no lockfile', async () => {
+		const outerDir = path.join(tmpDir, 'outer');
+		const checkoutDir = path.join(outerDir, 'worktrees', 'inner');
+		const childDir = path.join(checkoutDir, 'packages', 'app');
+		await fs.mkdir(childDir, { recursive: true });
+		await fs.writeFile(path.join(outerDir, 'pnpm-lock.yaml'), '');
+		await fs.writeFile(path.join(checkoutDir, '.git'), 'gitdir: /tmp/inner');
+
+		await expect(runDetectPackageManager(childDir)).rejects.toMatchObject({
+			_tag: 'NoPackageManagerDetectedError',
+		});
+	});
 });
