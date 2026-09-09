@@ -2,6 +2,7 @@ import { Command } from 'effect/unstable/cli';
 import { activateCmd } from './activate.ts';
 import { addCmd } from './add.ts';
 import { cdCmd } from './cd.ts';
+import { doctorCmd } from './doctor.ts';
 import { execCmd } from './exec.ts';
 import { installCmd, installFullCmd } from './install.ts';
 import { linkCmd } from './link.ts';
@@ -27,6 +28,7 @@ export const pmCmd = Command.make('pm').pipe(
 		linkCmd,
 		unlinkCmd,
 		cdCmd,
+		doctorCmd,
 		wCmd,
 		activateCmd,
 		upCmd,
