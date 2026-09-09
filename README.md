@@ -40,6 +40,7 @@ pm add <pkg>             Add a dependency (-D for dev)
 pm remove <pkg>          Remove a dependency
 pm ls                    List workspace packages (passthrough to the underlying package manager)
 pm cd <pkg>              cd into a workspace package
+pm doctor                Show the resolved package manager and project root
 pm run <script>           Run a package.json script
 pm <script>               Shorthand for pm run
 pm exec <cmd>             Run a locally installed binary
@@ -130,4 +131,3 @@ This points `pm` at this repo's source for the current shell session only.
 ## Neovim
 
 A companion plugin opens workspace packages in [oil.nvim](https://github.com/stevearc/oil.nvim) via `:pm cd <package-name>` (a cmdline abbreviation for the underlying `:Pm` command). See [docs/nvim.md](docs/nvim.md).
-
