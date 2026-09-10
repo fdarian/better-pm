@@ -26,7 +26,25 @@ describe('resolveArgv', () => {
 	test('unknown command preserves trailing args', () => {
 		expect(
 			resolveArgv(['bin', 'script', 'dev', '--watch'], knownCommands),
-		).toEqual(['bin', 'script', 'run', 'dev', '--watch']);
+		).toEqual(['bin', 'script', 'run', 'dev', '--', '--watch']);
+	});
+
+	test('forwards script flags without treating them as pm options', () => {
+		expect(
+			resolveArgv(
+				['bin', 'script', 'dev', '--lite', '--local', 'hatchet'],
+				knownCommands,
+			),
+		).toEqual([
+			'bin',
+			'script',
+			'run',
+			'dev',
+			'--',
+			'--lite',
+			'--local',
+			'hatchet',
+		]);
 	});
 
 	test('another unknown command gets prefixed', () => {
@@ -41,6 +59,12 @@ describe('resolveArgv', () => {
 	test('known command "run" is unchanged', () => {
 		const argv = ['bin', 'script', 'run', 'test'];
 		expect(resolveArgv(argv, knownCommands)).toEqual(argv);
+	});
+
+	test('explicit run forwards script flags', () => {
+		expect(
+			resolveArgv(['bin', 'script', 'run', 'dev', '--lite'], knownCommands),
+		).toEqual(['bin', 'script', 'run', 'dev', '--', '--lite']);
 	});
 
 	test('known command "i" is unchanged', () => {
@@ -108,7 +132,7 @@ describe('resolveArgv', () => {
 					['bin', 'script', '-F', 'web', 'dev', '--watch'],
 					knownCommands,
 				),
-			).toEqual(['bin', 'script', 'run', '-F', 'web', 'dev', '--watch']);
+			).toEqual(['bin', 'script', 'run', '-F', 'web', 'dev', '--', '--watch']);
 		});
 
 		test('pm -F web alone (no script token) is unchanged', () => {
@@ -205,7 +229,7 @@ describe('resolveArgv', () => {
 					['bin', 'script', '-F', 'web', 'dev', '--watch'],
 					knownCommands,
 				),
-			).toEqual(['bin', 'script', 'run', '-F', 'web', 'dev', '--watch']);
+			).toEqual(['bin', 'script', 'run', '-F', 'web', 'dev', '--', '--watch']);
 		});
 	});
 });
