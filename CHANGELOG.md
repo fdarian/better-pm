@@ -1,5 +1,17 @@
 # better-pm
 
+## 0.5.0
+
+### Minor Changes
+
+- 4e65798: Add `pm doctor` command
+
+### Patch Changes
+
+- dc73723: Resolve package managers from the nearest checkout and keep nested worktrees from inheriting outer repository settings.
+- 2c88fc0: Prefer the package manager declared in the project root package.json.
+- 4253c2b: Add shell completion for `pm run <script>` (with or without `-F`), completing script names from the current package's `package.json`.
+
 ## 0.4.0
 
 ### Minor Changes
