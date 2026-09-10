@@ -13,6 +13,40 @@ function hasInlineFilterValue(token: string): boolean {
 	return token.startsWith('-F=') || token.startsWith('--filter=');
 }
 
+function normalizeRunArgs(args: readonly string[]): readonly string[] {
+	if (args.includes('--')) return args;
+
+	const options: Array<string> = [];
+	const passthrough: Array<string> = [];
+	for (let index = 0; index < args.length; index += 1) {
+		const token = args[index];
+		if (isFilterFlag(token)) {
+			options.push(token);
+			if (!hasInlineFilterValue(token)) {
+				const value = args[index + 1];
+				if (value !== undefined) {
+					options.push(value);
+					index += 1;
+				}
+			}
+			continue;
+		}
+
+		if (token === '--completions') {
+			options.push(token);
+			continue;
+		}
+
+		passthrough.push(token);
+	}
+
+	const script = passthrough[0];
+	if (script === undefined) return options;
+	if (passthrough.length === 1) return [...options, script];
+
+	return [...options, script, '--', ...passthrough.slice(1)];
+}
+
 /** Index of the first token after any leading `-F`/`--filter` flags (and their values). */
 function skipLeadingFilterFlags(
 	argv: readonly string[],
@@ -45,6 +79,14 @@ export function resolveArgv(
 	const remainingArgs = argv.slice(scriptIndex + 1);
 
 	if (knownCommands.has(scriptToken)) {
+		if (scriptToken === 'run') {
+			return [
+				...argv.slice(0, 2),
+				'run',
+				...normalizeRunArgs([...leadingFilterArgs, ...remainingArgs]),
+			];
+		}
+
 		return [
 			...argv.slice(0, 2),
 			scriptToken,
@@ -56,8 +98,6 @@ export function resolveArgv(
 	return [
 		...argv.slice(0, 2),
 		'run',
-		...leadingFilterArgs,
-		scriptToken,
-		...remainingArgs,
+		...normalizeRunArgs([...leadingFilterArgs, scriptToken, ...remainingArgs]),
 	];
 }
