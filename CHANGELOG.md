@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.5.2
+
+### Patch Changes
+
+- 2231654: Forward script flags passed to `pm run` and its shorthand.
+
 ## 0.5.1
 
 ### Patch Changes
