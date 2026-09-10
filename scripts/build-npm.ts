@@ -30,6 +30,7 @@ for (const platform of platforms) {
 			'--sourcemap',
 			'--minify',
 			'--bytecode',
+			'--format=esm',
 			`--target=${target}`,
 			'entries/cli.ts',
 			`--outfile=${outfile}`,
