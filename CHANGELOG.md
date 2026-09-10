@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.5.1
+
+### Patch Changes
+
+- 1f5f3bd: Invalid build
+
 ## 0.5.0
 
 ### Minor Changes
