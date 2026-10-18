@@ -5,7 +5,7 @@ description: Dated findings on compiling the pm CLI ahead of time with scriptc a
 tags: [build, distribution, scriptc, perry, native-compilation]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T23:44:46.357Z
+    at: 2026-10-18T23:51:23.812Z
 sources:
   - id: openwiki-source-3e3c19eabeaa1bc882ac5090
     resource: repo://entries/cli.ts
@@ -36,7 +36,7 @@ Tested 0.3.4 (2026-10-16), 0.3.5 (2026-10-17) and 0.3.6 (2026-10-19) with `effec
   import { Data } from 'effect'; console.log(typeof Data)
   ```
 
-  This also fails for Effect, Exit, Context, Schema, Cause, Layer, Scope and Stream, and for every `@effect/platform-node` deep import. It persists on `effect` 4.0.5 and is not fixed by `--npm-static`, `--optimization dev` or a tsconfig. Only Option, Result and Function compile. In a per-module count (2026-10-19), 85 of 137 `effect/<Module>` deep imports fail and 52 compile. No code change in this repo can fix it.
+  This also fails for Effect, Exit, Context, Schema, Cause, Layer, Scope and Stream, and for every `@effect/platform-node` deep import. It persists on `effect` 4.0.5 and is not fixed by `--npm-static`, `--optimization dev` or a tsconfig. In a per-module count (2026-10-19), 85 of 137 `effect/<Module>` deep imports fail and 52 compile. Option, Result, Predicate, Equal, Hash, Array, HashMap and Match are among the modules that compile. No code change in this repo can fix it.
 
   Root cause (2026-10-19): SC3004 fires on a JS class that extends a plain function constructor. In `effect` that is `Pipeable.Class`, an IIFE returning `function PipeableBase() {}` with a reassigned prototype, which `Data.js` subclasses with `class extends Pipeable.Class`. Replacing it with a real class makes `Data.js` compile. Effect-free repro, in a `.js` file with `"type":"module"`, fails with SC3004 at 1:1:
 
