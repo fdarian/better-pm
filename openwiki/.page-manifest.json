@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "pages": {
+    "/openwiki/build/alternative-native-compilers.md": {
+      "pageVersion": "sha256:d59e121add41541cd4cd04bf00b98694efa1bdfa1eab4e34aa3895ba278f6044",
+      "completedBy": "claude-code",
+      "completedRunId": "0e9b61d8-8dbf-4897-9edb-283958a67fd2",
+      "gitHead": "4f2f9c27f9c6da32eedc9288ca7aa5c80f5401a1",
+      "sourceFingerprint": "sha256:0fe9e322150ffbadf93e34a5244b9481ca301e8a912f46634e7c93993c5b3838"
+    },
+    "/openwiki/quickstart.md": {
+      "pageVersion": "sha256:90f0ed5a639c8bbc5be79264cff0e48157ac20537a9d7fe3e701f53d7c39a7cb",
+      "completedBy": "claude-code",
+      "completedRunId": "0e9b61d8-8dbf-4897-9edb-283958a67fd2",
+      "gitHead": "4f2f9c27f9c6da32eedc9288ca7aa5c80f5401a1",
+      "sourceFingerprint": "sha256:0fe9e322150ffbadf93e34a5244b9481ca301e8a912f46634e7c93993c5b3838"
+    }
+  }
+}
