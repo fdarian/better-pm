@@ -5,7 +5,7 @@ description: Dated findings on compiling the pm CLI ahead of time with scriptc a
 tags: [build, distribution, scriptc, perry, native-compilation]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T23:51:23.812Z
+    at: 2026-10-18T23:51:40.891Z
 sources:
   - id: openwiki-source-3e3c19eabeaa1bc882ac5090
     resource: repo://entries/cli.ts
@@ -46,13 +46,13 @@ Tested 0.3.4 (2026-10-16), 0.3.5 (2026-10-17) and 0.3.6 (2026-10-19) with `effec
   console.log(typeof Foo);
   ```
 
-  The same pattern in `.ts` (`extends (Base as any)`) gives SC1090 ("extending computed expressions are not supported yet") instead. Upstream: no matching issue in vercel-labs/scriptc as of 2026-10-19; a report is drafted but not filed yet.
+  The same pattern in `.ts` (`extends (Base as any)`) gives SC1090 ("extending computed expressions are not supported yet") instead. Upstream: no matching issue existed before the report was filed as https://github.com/vercel-labs/scriptc/issues/1349 on 2026-10-19.
 - **SC1014** when importing the `@effect/platform-node` barrel (re-exports from packages are unsupported). The barrel also pulls in `@redis/client` and `undici`. Related upstream: https://github.com/vercel-labs/scriptc/issues/735 and https://github.com/vercel-labs/scriptc/issues/19 (closed, named re-exports from packages), and open https://github.com/vercel-labs/scriptc/issues/1324 and https://github.com/vercel-labs/scriptc/issues/1289 (package entry resolution).
 - **SC1010 `dns/promises`** (and `node:dns/promises`) is unsupported. Upstream: https://github.com/vercel-labs/scriptc/issues/434 (closed, `node:dns/promises` not shimmed) and the open https://github.com/vercel-labs/scriptc/pull/1318, which adds `dns/promises` among other things.
 - **spawn `shell` option must be a literal boolean (SC2020).** `src/commands/run-shell-command.ts` passes `cmd.options.shell`, typed `string | boolean | undefined`, so it would need to branch into separate `spawn` calls (or an `exec` path for string shells). Upstream: https://github.com/vercel-labs/scriptc/issues/370 (closed, `spawn({ shell })` had no lowering). The SC2020 check looks like a deliberate restriction, so the fix belongs in this repo. Everything else in that file's child_process pattern (spawn with `detached`, SIGINT forwarding, `process.kill(-pid)`) compiled and ran correctly in isolation as a 288 KB binary.
 - Blockers are ordered: SC3004 first, then the platform-node re-exports, then the shell option. Later ones were only seen in isolation.
 
-**Retry when** a scriptc release note mentions `effect`, SC3004 or classes extending function constructors, or when PR #1318 merges (the `dns/promises` gap). The 0.3.4 to 0.3.6 changelogs covered only `node:*` stdlib breadth and performance. As of 2026-10-19 no upstream issue matches SC3004; the report is drafted, not filed.
+**Retry when** a scriptc release note mentions `effect`, SC3004 or classes extending function constructors, or when PR #1318 merges (the `dns/promises` gap). The 0.3.4 to 0.3.6 changelogs covered only `node:*` stdlib breadth and performance. SC3004 is tracked upstream in https://github.com/vercel-labs/scriptc/issues/1349 (filed 2026-10-19), so check its status too.
 
 ## Perry: builds a binary, but only `--help` and `--version` work (0.5.1520, 2026-10-16)
 
