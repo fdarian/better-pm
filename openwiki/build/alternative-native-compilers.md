@@ -5,7 +5,7 @@ description: Dated findings on compiling the pm CLI ahead of time with scriptc a
 tags: [build, distribution, scriptc, perry, native-compilation]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T22:45:49.022Z
+    at: 2026-10-18T23:44:46.357Z
 sources:
   - id: openwiki-source-3e3c19eabeaa1bc882ac5090
     resource: repo://entries/cli.ts
@@ -13,7 +13,7 @@ sources:
     resource: repo://scripts/build-npm.ts
   - id: openwiki-source-fabe3bbd9710d9a093ba58bd
     resource: repo://src/commands/run-shell-command.ts
-generated: { by: "claude-code", at: "2026-10-18T22:45:49.022Z" }
+generated: { by: "claude-code", at: "2026-10-18T23:44:46.357Z" }
 ---
 
 # Alternative native compilers (scriptc, Perry)
@@ -30,19 +30,29 @@ Baseline for comparison (2026-10-16): the `bun build --compile` binary is 71.4 M
 
 Tested 0.3.4 (2026-10-16), 0.3.5 (2026-10-17) and 0.3.6 (2026-10-19) with `effect` 4.0.0-rc.112. All three give the same result. No binary was ever built, so there are no size or startup numbers.
 
-- **Main blocker: any import from `effect` fails with SC3004** ("null is not representable in the target union"), reported at the import line 1:1 with no inner location. One-line repro:
+- **Main blocker: most imports from `effect` fail with SC3004** ("null is not representable in the target union"), reported at the import line 1:1 with no inner location. One-line repro:
 
   ```ts
   import { Data } from 'effect'; console.log(typeof Data)
   ```
 
-  This also fails for Effect, Exit, Context, Schema, Cause, Layer, Scope and Stream, and for every `@effect/platform-node` deep import. It persists on `effect` 4.0.5 and is not fixed by `--npm-static`, `--optimization dev` or a tsconfig. Only Option, Result and Function compile. No code change in this repo can fix it.
-- **SC1014** when importing the `@effect/platform-node` barrel (re-exports from packages are unsupported). The barrel also pulls in `@redis/client` and `undici`.
-- **SC1010 `dns/promises`** (and `node:dns/promises`) is unsupported.
-- **spawn `shell` option must be a literal boolean (SC2020).** `src/commands/run-shell-command.ts` passes `cmd.options.shell`, typed `string | boolean | undefined`, so it would need to branch into separate `spawn` calls (or an `exec` path for string shells). Everything else in that file's child_process pattern (spawn with `detached`, SIGINT forwarding, `process.kill(-pid)`) compiled and ran correctly in isolation as a 288 KB binary.
+  This also fails for Effect, Exit, Context, Schema, Cause, Layer, Scope and Stream, and for every `@effect/platform-node` deep import. It persists on `effect` 4.0.5 and is not fixed by `--npm-static`, `--optimization dev` or a tsconfig. Only Option, Result and Function compile. In a per-module count (2026-10-19), 85 of 137 `effect/<Module>` deep imports fail and 52 compile. No code change in this repo can fix it.
+
+  Root cause (2026-10-19): SC3004 fires on a JS class that extends a plain function constructor. In `effect` that is `Pipeable.Class`, an IIFE returning `function PipeableBase() {}` with a reassigned prototype, which `Data.js` subclasses with `class extends Pipeable.Class`. Replacing it with a real class makes `Data.js` compile. Effect-free repro, in a `.js` file with `"type":"module"`, fails with SC3004 at 1:1:
+
+  ```js
+  function Base() {}
+  class Foo extends Base {}
+  console.log(typeof Foo);
+  ```
+
+  The same pattern in `.ts` (`extends (Base as any)`) gives SC1090 ("extending computed expressions are not supported yet") instead. Upstream: no matching issue in vercel-labs/scriptc as of 2026-10-19; a report is drafted but not filed yet.
+- **SC1014** when importing the `@effect/platform-node` barrel (re-exports from packages are unsupported). The barrel also pulls in `@redis/client` and `undici`. Related upstream: https://github.com/vercel-labs/scriptc/issues/735 and https://github.com/vercel-labs/scriptc/issues/19 (closed, named re-exports from packages), and open https://github.com/vercel-labs/scriptc/issues/1324 and https://github.com/vercel-labs/scriptc/issues/1289 (package entry resolution).
+- **SC1010 `dns/promises`** (and `node:dns/promises`) is unsupported. Upstream: https://github.com/vercel-labs/scriptc/issues/434 (closed, `node:dns/promises` not shimmed) and the open https://github.com/vercel-labs/scriptc/pull/1318, which adds `dns/promises` among other things.
+- **spawn `shell` option must be a literal boolean (SC2020).** `src/commands/run-shell-command.ts` passes `cmd.options.shell`, typed `string | boolean | undefined`, so it would need to branch into separate `spawn` calls (or an `exec` path for string shells). Upstream: https://github.com/vercel-labs/scriptc/issues/370 (closed, `spawn({ shell })` had no lowering). The SC2020 check looks like a deliberate restriction, so the fix belongs in this repo. Everything else in that file's child_process pattern (spawn with `detached`, SIGINT forwarding, `process.kill(-pid)`) compiled and ran correctly in isolation as a 288 KB binary.
 - Blockers are ordered: SC3004 first, then the platform-node re-exports, then the shell option. Later ones were only seen in isolation.
 
-**Retry when** a scriptc release note mentions `effect` or SC3004. The 0.3.4 to 0.3.6 changelogs covered only `node:*` stdlib breadth and performance. No upstream issue existed in vercel-labs/scriptc as of 2026-10-17.
+**Retry when** a scriptc release note mentions `effect`, SC3004 or classes extending function constructors, or when PR #1318 merges (the `dns/promises` gap). The 0.3.4 to 0.3.6 changelogs covered only `node:*` stdlib breadth and performance. As of 2026-10-19 no upstream issue matches SC3004; the report is drafted, not filed.
 
 ## Perry: builds a binary, but only `--help` and `--version` work (0.5.1520, 2026-10-16)
 
