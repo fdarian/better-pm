@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:90f0ed5a639c8bbc5be79264cff0e48157ac20537a9d7fe3e701f53d7c39a7cb",
+  "claims": [
+    {
+      "id": "claim_a49aef87b436400db8e18cd764bf3053",
+      "statement": "The release pipeline is documented in docs/deployment.md, and CLAUDE.md documents the repository structure and commands.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L7-L16",
+          "version": "repo-lines-v1:sha256:a17082979a5560df2208dc18e3271c177aa87e5583aef693a494816d342a7634:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZDc4ZjA2YzE0MDc0MzhmNTRkYjkzMzBjZjJmMWIwMDgyMjE0YzQwNDdkMDFmN2UyNzNmN2YzMTc3YjViMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NTYwMDQ4YTJiNTg3MmQyZTYzMWYxZDMxYjgzMzU3MjU4MDgwNTE2MTBiZjI0NDFlYWI1YjUwYTY4NzI4YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlODc0ZmEwNDk0YjMyN2YxNjQ2NDkxOTg2YTYyODVmYzc5MWYxZDAyZWE3ZTk3ZTU2MWJjOWZiZmE3NjkxNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwODYwMjQ1NGY0N2IwMzRhY2VjMjFjMWU0ZGM2Mzg5NDgxMDFkNWRmMGQ4ZjhlMjY1MDFiN2NkNWZmZmFmZjgifQ"
+        },
+        {
+          "resource": "repo://docs/deployment.md#L1-L16",
+          "version": "repo-lines-v1:sha256:6cb4c6aa3a46629ef0a96a4ec1f9650ea41aad1b57f5f998e68dbe7d810ca8ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2Y2QyMTNmNzJmYmZmYTY2ZjFhZDA3NDQzMjczZDEzMmMwZDNmNjU5YzcwMjQ1MjU3ZTc5YmEyMjBmOGRkMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMmY2ZTRhYzE1Y2IwNGVmNzMyM2ZkNTJjMjQxZjc0YzhkZWFiOGFjZDcwNmQ5OTQwYTFlZjUyMjZjNTFjZTAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-18T22:45:49.022Z"
+  }
+}
