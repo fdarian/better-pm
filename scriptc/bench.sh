@@ -37,10 +37,10 @@ trap 'rm -f "$results"' EXIT
 
 echo "## Startup (hyperfine -N, warmup 5, 50 runs, in $(basename "$fixture"))"
 echo
-echo "Wall time and CPU time in ms, peak RSS in MiB. Ratio is scriptc / bun on the wall-time median."
+echo "Wall time and CPU time in ms, instructions in millions, peak RSS in MiB. Ratio is scriptc / bun on the wall-time median."
 echo
-echo "| command | binary | wall mean ± σ | wall median | CPU time | peak RSS | ratio |"
-echo "|---|---|---|---|---|---|---|"
+echo "| command | binary | wall mean ± σ | wall median | CPU time | instructions | peak RSS | ratio |"
+echo "|---|---|---|---|---|---|---|---|"
 for args in "--help" "--version" "cd --completions" "run --completions"; do
   hyperfine -N --warmup 5 --runs 50 \
     "$scriptc_bin $args" "$bun_bin $args" \
@@ -48,8 +48,9 @@ for args in "--help" "--version" "cd --completions" "run --completions"; do
   jq -r --arg args "$args" '
     def ms: . * 1000 * 10 | round / 10;
     def mib: . / 1048576 * 10 | round / 10;
+    def mega: . / 1000000 | round;
     def row($name; $s; $ratio):
-      "| `pm \($args)` | \($name) | \($s.time_wall_clock.mean | ms) ± \($s.time_wall_clock.stddev | ms) | \($s.time_wall_clock.median | ms) | \($s.time_cpu.mean | ms) | \($s.memory_peak_resident.max | mib) | \($ratio) |";
+      "| `pm \($args)` | \($name) | \($s.time_wall_clock.mean | ms) ± \($s.time_wall_clock.stddev | ms) | \($s.time_wall_clock.median | ms) | \($s.time_cpu.mean | ms) | \($s.instructions.mean | mega) | \($s.memory_peak_resident.max | mib) | \($ratio) |";
     (.results[0].summary) as $sc
     | (.results[1].summary) as $bun
     | row("scriptc"; $sc; "\(($sc.time_wall_clock.median / $bun.time_wall_clock.median) * 100 | round / 100)x"),

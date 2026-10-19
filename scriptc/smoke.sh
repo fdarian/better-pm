@@ -41,6 +41,7 @@ check() {
 check exact --version
 check exact --help
 check exact i --help
+check exact ls
 check exact activate zsh
 check exact activate bash
 check exact activate fish

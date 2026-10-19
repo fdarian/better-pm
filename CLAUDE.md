@@ -7,6 +7,8 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 ## Structure
 
 - `entries/cli.ts` — Effect CLI bootstrap
+- `entries/cli-node.ts` — Same bootstrap on `NodeServices`/`NodeRuntime`, the entry scriptc compiles (`pnpm run build:scriptc`); `cli-node.test.ts` fails if it drifts from `cli.ts`
+- `scriptc/` — Reproducible native build of the CLI with scriptc, plus fixture generator, smoke and bench scripts; see `scriptc/README.md`
 - `src/commands/` — Command implementations (install, add, remove, ls, cd, activate)
 - `src/pm/` — Package manager abstraction (pnpm/bun/npm implementations, detection)
 - `src/pm/filter-argv.ts` — Shared `-F/--filter` argv assembly; each PM declares a `FilterSpec` (flag spelling, position relative to the subcommand, selector-syntax support, and which operations it can't filter at all) consumed by every command that shells out
