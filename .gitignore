@@ -4,3 +4,4 @@ dist/
 npm/
 .repos/
 *.local*
+scriptc/fixtures/
