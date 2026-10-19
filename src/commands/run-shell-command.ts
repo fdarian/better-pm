@@ -65,6 +65,31 @@ function mergeEnv(
 	return env;
 }
 
+function spawnInheritingStdio(
+	command: string,
+	args: string[],
+	cwd: string | undefined,
+	env: Record<string, string | undefined>,
+	shell: boolean,
+) {
+	if (shell) {
+		return spawn(command, args, {
+			stdio: 'inherit',
+			detached: true,
+			cwd,
+			env,
+			shell: true,
+		});
+	}
+	return spawn(command, args, {
+		stdio: 'inherit',
+		detached: true,
+		cwd,
+		env,
+		shell: false,
+	});
+}
+
 /**
  * Spawns with detached: true so only pm receives terminal SIGINT.
  * On Ctrl+C, sends SIGTERM only to descendant processes in other process groups
@@ -77,13 +102,16 @@ export const runShellCommand = (cmd: ChildProcess.Command) =>
 			if (cmd._tag !== 'StandardCommand') {
 				throw new Error(`PipedCommand is not supported`);
 			}
-			const child = spawn(cmd.command, cmd.args as string[], {
-				stdio: 'inherit',
-				detached: true,
-				cwd: cmd.options.cwd,
-				env: mergeEnv(cmd.options.env),
-				shell: cmd.options.shell,
-			});
+			if (typeof cmd.options.shell === 'string') {
+				throw new Error(`A custom shell path is not supported`);
+			}
+			const child = spawnInheritingStdio(
+				cmd.command,
+				cmd.args as string[],
+				cmd.options.cwd,
+				mergeEnv(cmd.options.env),
+				cmd.options.shell === true,
+			);
 
 			if (child.pid === undefined) {
 				resume(

@@ -19,10 +19,10 @@ type FilterCommandError =
 	| UnsupportedFilterSelectorError
 	| UnsupportedFilterOperationError;
 
-export interface WorkspacePackageEntry {
+export type WorkspacePackageEntry = {
 	readonly name: string;
 	readonly relDir: string;
-}
+};
 
 export interface PackageManagerImplementation {
 	readonly name: string;
@@ -135,9 +135,10 @@ export const enumerateWorkspacePackages = (
 								];
 							}),
 						);
-						const results = yield* Effect.all(entryTasks, {
-							concurrency: 'unbounded',
-						});
+						const results: ReadonlyArray<ReadonlyArray<WorkspacePackageEntry>> =
+							yield* Effect.all(entryTasks, {
+								concurrency: 'unbounded',
+							});
 						const packages: Array<WorkspacePackageEntry> = [];
 						for (const entryPackages of results) {
 							packages.push(...entryPackages);
@@ -157,7 +158,8 @@ export const enumerateWorkspacePackages = (
 			];
 		});
 
-		const results = yield* Effect.all(tasks, { concurrency: 'unbounded' });
+		const results: ReadonlyArray<ReadonlyArray<WorkspacePackageEntry>> =
+			yield* Effect.all(tasks, { concurrency: 'unbounded' });
 		const packages: Array<WorkspacePackageEntry> = [];
 		for (const taskPackages of results) {
 			packages.push(...taskPackages);

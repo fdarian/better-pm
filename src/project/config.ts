@@ -7,12 +7,17 @@ const PmOverrides = Schema.Record(
 	Schema.Record(Schema.String, Schema.String),
 );
 
-const PmConfig = Schema.Struct({
+export type PmConfig = {
+	readonly scopedInstall?: boolean | undefined;
+	readonly overrides?:
+		| Readonly<Record<string, Readonly<Record<string, string>>>>
+		| undefined;
+};
+
+const PmConfig: Schema.Codec<PmConfig> = Schema.Struct({
 	scopedInstall: Schema.optional(Schema.Boolean),
 	overrides: Schema.optional(PmOverrides),
 });
-
-export type PmConfig = Schema.Schema.Type<typeof PmConfig>;
 export type CommandOverride = {
 	bin: string;
 	subcommand: ReadonlyArray<string>;
