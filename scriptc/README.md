@@ -94,7 +94,7 @@ The following were run once with a throwaway harness (a copy of a small pnpm wor
 | `run <script>`, `<script>`, `-F <pkg> run <script>`, extra args after the script | same |
 | `run nosuch` | same (`ERR_PNPM_NO_SCRIPT`, same exit code) |
 | Ctrl+C (`kill -INT`) during a long `run` | same: child gets SIGTERM, pm exits 130, no leftover processes |
-| `ls`, `doctor`, `w`, `up`, `exec`, `why`, `x`, `link`, `unlink` | same |
+| `ls`, `doctor`, `w`, `up`, `exec`, `why`, `link`, `unlink` | same |
 
 ## Benchmarks
 
