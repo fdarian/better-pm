@@ -19,53 +19,63 @@ type FilterCommandError =
 	| UnsupportedFilterSelectorError
 	| UnsupportedFilterOperationError;
 
+export interface WorkspacePackageEntry {
+	readonly name: string;
+	readonly relDir: string;
+}
+
+export interface PackageManagerImplementation {
+	readonly name: string;
+	readonly filterSpec: FilterSpec;
+	readonly detectHasWorkspaces: (
+		lockDir: string,
+	) => Effect.Effect<
+		boolean,
+		PlatformError.PlatformError | Schema.SchemaError,
+		FileSystem.FileSystem | Path.Path
+	>;
+	readonly listWorkspacePackages: (
+		lockDir: string,
+	) => Effect.Effect<
+		Array<{ name: string; relDir: string }>,
+		PlatformError.PlatformError | Schema.SchemaError,
+		FileSystem.FileSystem | Path.Path
+	>;
+	readonly buildInstallCommand: (
+		override?: CommandOverride,
+	) => ChildProcess.Command;
+	readonly buildFilteredInstallCommand: (
+		filters: Array<string>,
+		override?: CommandOverride,
+	) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
+	readonly buildAddCommand: (
+		packages: Array<string>,
+		dev: boolean,
+		filters: Array<string>,
+		override?: CommandOverride,
+	) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
+	readonly buildRemoveCommand: (
+		packages: Array<string>,
+		filters: Array<string>,
+		override?: CommandOverride,
+	) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
+	readonly resolveInstallFilters: (
+		lockDir: string,
+		packageName: string,
+	) => Effect.Effect<
+		Array<string>,
+		PlatformError.PlatformError | Schema.SchemaError,
+		FileSystem.FileSystem | Path.Path
+	>;
+}
+
+export interface PackageManagerShape extends PackageManagerImplementation {
+	readonly lockDir: string;
+}
+
 export class PackageManagerService extends Context.Service<
 	PackageManagerService,
-	{
-		readonly lockDir: string;
-		readonly name: string;
-		readonly filterSpec: FilterSpec;
-		readonly detectHasWorkspaces: (
-			lockDir: string,
-		) => Effect.Effect<
-			boolean,
-			PlatformError.PlatformError | Schema.SchemaError,
-			FileSystem.FileSystem | Path.Path
-		>;
-		readonly listWorkspacePackages: (
-			lockDir: string,
-		) => Effect.Effect<
-			Array<{ name: string; relDir: string }>,
-			PlatformError.PlatformError | Schema.SchemaError,
-			FileSystem.FileSystem | Path.Path
-		>;
-		readonly buildInstallCommand: (
-			override?: CommandOverride,
-		) => ChildProcess.Command;
-		readonly buildFilteredInstallCommand: (
-			filters: Array<string>,
-			override?: CommandOverride,
-		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
-		readonly buildAddCommand: (
-			packages: Array<string>,
-			dev: boolean,
-			filters: Array<string>,
-			override?: CommandOverride,
-		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
-		readonly buildRemoveCommand: (
-			packages: Array<string>,
-			filters: Array<string>,
-			override?: CommandOverride,
-		) => Effect.Effect<ChildProcess.Command, FilterCommandError>;
-		readonly resolveInstallFilters: (
-			lockDir: string,
-			packageName: string,
-		) => Effect.Effect<
-			Array<string>,
-			PlatformError.PlatformError | Schema.SchemaError,
-			FileSystem.FileSystem | Path.Path
-		>;
-	}
+	PackageManagerShape
 >()('PackageManagerService') {}
 
 export const PackageJsonWorkspacesField = Schema.Union([
@@ -128,7 +138,11 @@ export const enumerateWorkspacePackages = (
 						const results = yield* Effect.all(entryTasks, {
 							concurrency: 'unbounded',
 						});
-						return results.flat();
+						const packages: Array<WorkspacePackageEntry> = [];
+						for (const entryPackages of results) {
+							packages.push(...entryPackages);
+						}
+						return packages;
 					}),
 				];
 			}
@@ -144,7 +158,11 @@ export const enumerateWorkspacePackages = (
 		});
 
 		const results = yield* Effect.all(tasks, { concurrency: 'unbounded' });
-		return results.flat();
+		const packages: Array<WorkspacePackageEntry> = [];
+		for (const taskPackages of results) {
+			packages.push(...taskPackages);
+		}
+		return packages;
 	});
 
 const PackageJsonWithDeps = Schema.Struct({
@@ -183,8 +201,14 @@ export const collectWorkspaceDependencies = (
 					Schema.fromJsonString(PackageJsonWithDeps),
 				)(content);
 
-				const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
-				for (const [depName, version] of Object.entries(allDeps)) {
+				const allDeps = new Map<string, string>();
+				for (const deps of [pkg.dependencies, pkg.devDependencies]) {
+					if (deps === undefined) continue;
+					for (const depName of Object.keys(deps)) {
+						allDeps.set(depName, deps[depName]);
+					}
+				}
+				for (const [depName, version] of allDeps) {
 					if (version.startsWith('workspace:')) {
 						yield* resolve(depName);
 					}
