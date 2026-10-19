@@ -47,30 +47,22 @@ const readConfigFile = (configPath: string) =>
 		return yield* Schema.decodeEffect(Schema.fromJsonString(PmConfig))(content);
 	});
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === 'object' && value !== null && !Array.isArray(value);
+type PmOverridesConfig = NonNullable<PmConfig['overrides']>;
 
-/** One-level-deep merge; override wins, except when both values are plain records, which shallow-merge. */
-const mergeConfig = (base: PmConfig, override: PmConfig): PmConfig => {
-	const baseRecord = base as Record<string, unknown>;
-	const overrideRecord = override as Record<string, unknown>;
-	const keys = new Set([
-		...Object.keys(baseRecord),
-		...Object.keys(overrideRecord),
-	]);
-	return Object.fromEntries(
-		Array.from(keys, (key) => {
-			const baseValue = baseRecord[key];
-			const overrideValue = overrideRecord[key];
-			if (overrideValue === undefined) return [key, baseValue];
-			if (baseValue === undefined) return [key, overrideValue];
-			if (isRecord(baseValue) && isRecord(overrideValue)) {
-				return [key, { ...baseValue, ...overrideValue }];
-			}
-			return [key, overrideValue];
-		}),
-	) as PmConfig;
+const mergeOverrides = (
+	base: PmOverridesConfig | undefined,
+	override: PmOverridesConfig | undefined,
+): PmOverridesConfig | undefined => {
+	if (override === undefined) return base;
+	if (base === undefined) return override;
+	return { ...base, ...override };
 };
+
+/** One-level-deep merge; override wins, except `overrides`, whose per-package-manager entries shallow-merge. */
+const mergeConfig = (base: PmConfig, override: PmConfig): PmConfig => ({
+	scopedInstall: override.scopedInstall ?? base.scopedInstall,
+	overrides: mergeOverrides(base.overrides, override.overrides),
+});
 
 export const loadConfig = (lockDir: string) =>
 	Effect.gen(function* () {

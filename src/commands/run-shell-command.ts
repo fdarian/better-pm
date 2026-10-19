@@ -73,7 +73,7 @@ function spawnInheritingStdio(
 	shell: boolean,
 ) {
 	if (shell) {
-		return spawn(command, args, {
+		return spawn([command, ...args].join(' '), [], {
 			stdio: 'inherit',
 			detached: true,
 			cwd,
@@ -103,7 +103,7 @@ export const runShellCommand = (cmd: ChildProcess.Command) =>
 				throw new Error(`PipedCommand is not supported`);
 			}
 			if (typeof cmd.options.shell === 'string') {
-				throw new Error(`A custom shell path is not supported`);
+				throw new Error('A custom shell path is not supported');
 			}
 			const child = spawnInheritingStdio(
 				cmd.command,
