@@ -9,6 +9,7 @@ export const findUpward = (
 		const path = yield* Path.Path;
 		const homeDir = yield* Config.string('HOME');
 		const candidates = typeof filenames === 'string' ? [filenames] : filenames;
+		const notFoundMessage = `${candidates.join(',')} not found`;
 
 		let currentDir = startDir;
 
@@ -23,16 +24,16 @@ export const findUpward = (
 
 			const gitMarker = yield* fs.exists(path.join(currentDir, '.git'));
 			if (gitMarker) {
-				return yield* Effect.fail(new Error(`${filenames} not found`));
+				return yield* Effect.fail(new Error(notFoundMessage));
 			}
 
 			if (currentDir === homeDir) {
-				return yield* Effect.fail(new Error(`${filenames} not found`));
+				return yield* Effect.fail(new Error(notFoundMessage));
 			}
 
 			const parentDir = path.dirname(currentDir);
 			if (parentDir === currentDir) {
-				return yield* Effect.fail(new Error(`${filenames} not found`));
+				return yield* Effect.fail(new Error(notFoundMessage));
 			}
 
 			currentDir = parentDir;

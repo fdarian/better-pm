@@ -84,7 +84,10 @@ export const resolveCommandOverride = (
 	const value = config.overrides?.[pmName]?.[operation];
 	if (value === undefined) return undefined;
 
-	const tokens = value.split(/\s+/).filter((token) => token.length > 0);
+	const tokens: Array<string> = [];
+	for (const token of value.split(/\s+/)) {
+		if (token.length > 0) tokens.push(token);
+	}
 	if (tokens.length === 0) return undefined;
 
 	const bin = tokens[0];

@@ -32,8 +32,8 @@ export const pnpmPackageManager = {
 			);
 			const globs: Array<string> = [];
 			for (const line of content.split('\n')) {
-				const match = line.match(/^\s*-\s+(.+)$/);
-				if (match) {
+				const match = /^\s*-\s+(.+)$/.exec(line);
+				if (match !== null) {
 					globs.push(match[1].trim().replace(/^["']|["']$/g, ''));
 				}
 			}
