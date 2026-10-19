@@ -24,7 +24,7 @@ export type WorkspacePackageEntry = {
 	readonly relDir: string;
 };
 
-export interface PackageManagerImplementation {
+export type PackageManagerImplementation = {
 	readonly name: string;
 	readonly filterSpec: FilterSpec;
 	readonly detectHasWorkspaces: (
@@ -37,7 +37,7 @@ export interface PackageManagerImplementation {
 	readonly listWorkspacePackages: (
 		lockDir: string,
 	) => Effect.Effect<
-		Array<{ name: string; relDir: string }>,
+		Array<WorkspacePackageEntry>,
 		PlatformError.PlatformError | Schema.SchemaError,
 		FileSystem.FileSystem | Path.Path
 	>;
@@ -67,11 +67,11 @@ export interface PackageManagerImplementation {
 		PlatformError.PlatformError | Schema.SchemaError,
 		FileSystem.FileSystem | Path.Path
 	>;
-}
+};
 
-export interface PackageManagerShape extends PackageManagerImplementation {
+export type PackageManagerShape = PackageManagerImplementation & {
 	readonly lockDir: string;
-}
+};
 
 export class PackageManagerService extends Context.Service<
 	PackageManagerService,
