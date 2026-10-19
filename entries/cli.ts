@@ -11,9 +11,12 @@ export const cli = Command.runWith(pmCmd, {
 
 // `pmCmd.subcommands` groups commands (v4 dropped the v3 name→Command map);
 // every command here is ungrouped, so they all land in one group.
-const knownCommands = new Set(
-	pmCmd.subcommands.flatMap((group) => group.commands.map((cmd) => cmd.name)),
-);
+const knownCommands = new Set<string>();
+for (const group of pmCmd.subcommands) {
+	for (const cmd of group.commands) {
+		knownCommands.add(cmd.name);
+	}
+}
 
 // `Command.runWith` (unlike v3's `Command.run`) expects argv without the
 // leading node/script entries — it reads the same shape `Stdio`'s layer

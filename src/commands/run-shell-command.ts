@@ -54,6 +54,17 @@ function getOtherGroupDescendants(rootPid: number): number[] {
 	}
 }
 
+function mergeEnv(
+	overrides: Record<string, string | undefined> | undefined,
+): Record<string, string | undefined> {
+	const env: Record<string, string | undefined> = { ...process.env };
+	if (overrides === undefined) return env;
+	for (const key of Object.keys(overrides)) {
+		env[key] = overrides[key];
+	}
+	return env;
+}
+
 /**
  * Spawns with detached: true so only pm receives terminal SIGINT.
  * On Ctrl+C, sends SIGTERM only to descendant processes in other process groups
@@ -70,7 +81,7 @@ export const runShellCommand = (cmd: ChildProcess.Command) =>
 				stdio: 'inherit',
 				detached: true,
 				cwd: cmd.options.cwd,
-				env: { ...process.env, ...cmd.options.env },
+				env: mergeEnv(cmd.options.env),
 				shell: cmd.options.shell,
 			});
 
