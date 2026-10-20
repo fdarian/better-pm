@@ -8,7 +8,7 @@
 		"type": "git",
 		"url": "https://github.com/fdarian/better-pm.git"
 	},
-	"packageManager": "pnpm@12.3.3",
+	"packageManager": "pnpm@12.9.0",
 	"bin": {
 		"pm": "./bin.mjs"
 	},
@@ -20,7 +20,7 @@
 	},
 	"scripts": {
 		"format": "biome check --write",
-		"check:tsc": "tsgo --noEmit",
+		"check:tsc": "tsrs --noEmit",
 		"build": "bun scripts/build-npm.ts",
 		"ci:version": "pnpm exec changeset version && pnpm install --lockfile-only",
 		"ci:release": "bun run build && bun scripts/publish-npm.ts",
@@ -34,6 +34,7 @@
 		"@types/bun": "latest",
 		"@typescript/native-preview": "^7.0.0-dev.20260130.1",
 		"effect": "4.0.0-rc.112",
+		"tsrs": "0.18.0-ts7.1.0-dev.20260929",
 		"typescript": "latest",
 		"vitest": "^4.0.18"
 	},
