@@ -1,0 +1,297 @@
+---
+title: "pm why"
+description: "Explain why a package is installed"
+---
+
+## Overview
+
+The `pm why` command shows why a package is installed in your project by displaying the dependency chain that requires it.
+
+:::warning
+This command is not supported for npm. It works with pnpm and bun only.
+:::
+
+## Syntax
+
+```bash
+pm why <package> [...args]
+```
+
+## Arguments
+
+**package** `string` *required*
+
+The package name to investigate
+
+**args** `string[]`
+
+Additional arguments passed to the underlying package manager
+
+## Examples
+
+### Check Why Package is Installed
+
+```bash
+pm why lodash
+```
+
+```bash Output
+Running: pnpm why lodash
+
+dependencies:
+lodash 4.17.21
+├── my-app
+└─┬ some-library
+  └── lodash@^4.17.0
+```
+
+### Check Transitive Dependency
+
+```bash
+pm why typescript
+```
+
+```bash Output
+Running: pnpm why typescript
+
+devDependencies:
+typescript 5.0.0
+├── my-app
+├─┬ @typescript-eslint/parser
+│ └── typescript@>=4.2.0
+└─┬ vite
+  └── typescript@^5.0.0
+```
+
+### Check Deep Dependency
+
+```bash
+pm why react
+```
+
+```bash Output
+Running: pnpm why react
+
+dependencies:
+react 18.2.0
+├── my-app
+├── react-dom → react@^18.2.0
+└─┬ @radix-ui/react-dialog
+  └── react@^16.8 || ^17.0 || ^18.0
+```
+
+## Use Cases
+
+### Debug Unexpected Package
+
+Find out why an unexpected package is installed:
+
+```bash
+pm why some-random-package
+```
+
+### Understand Duplicates
+
+Check why multiple versions exist:
+
+```bash
+pm why react
+# Shows all dependency paths requiring react
+```
+
+### Audit Dependencies
+
+Investigate security vulnerabilities:
+
+```bash
+pm why vulnerable-package
+# Shows which packages depend on it
+```
+
+### Plan Upgrades
+
+Understand dependencies before upgrading:
+
+```bash
+pm why typescript
+# Check what requires specific version
+```
+
+## How It Works
+
+From `src/commands/why.ts:10-22`:
+
+```typescript
+export const whyCmd = cli.Command.make('why', { args: argsArg }, (args) =>
+  Effect.gen(function* () {
+    const pm = yield* PackageManagerService;
+    if (pm.name === 'npm') {
+      yield* Console.error('why is not supported for npm');
+      return;
+    }
+    const passthrough = Array.from(args.args);
+    const cmd = ShellCommand.make(pm.name, 'why', ...passthrough);
+    yield* Console.log(`Running: ${pm.name} why ${passthrough.join(' ')}`);
+    yield* runShellCommand(cmd);
+  }).pipe(Effect.provide(PackageManagerLayer)),
+);
+```
+
+The command:
+
+1. Detects your package manager
+2. Checks if it's npm (not supported)
+3. Passes arguments to `pnpm why` or `bun why`
+4. Displays the dependency tree
+
+## Package Manager Support
+
+| Package Manager | Supported | Command |
+| - | - | - |
+| pnpm | ✅ Yes | `pnpm why <package>` |
+| bun | ✅ Yes | `bun why <package>` |
+| npm | ❌ No | Not available |
+
+:::note
+npm users can use `npm ls <package>` as an alternative, though it provides different output format.
+:::
+
+## Alternative for npm
+
+If you're using npm:
+
+```bash
+npm ls lodash
+```
+
+This shows where the package is used, but with different formatting.
+
+## Understanding Output
+
+The output typically shows:
+
+1. **Package version** - The installed version
+2. **Dependency type** - Whether it's in dependencies, devDependencies, etc.
+3. **Dependency chain** - The tree of packages that require it
+4. **Version ranges** - The semver ranges that satisfied the requirement
+
+### Example Output Explained
+
+```bash
+pm why react
+```
+
+```bash
+dependencies:               # Found in dependencies
+react 18.2.0               # Installed version
+├── my-app                 # Direct dependency
+├── react-dom → react@^18  # Via react-dom (requires ^18)
+└─┬ ui-library             # Via ui-library
+  └── react@^18.0.0       # Which requires ^18.0.0
+```
+
+This tells you:
+
+* React 18.2.0 is installed
+* It's a direct dependency of your app
+* react-dom requires react ^18
+* ui-library also requires react ^18.0.0
+
+## Common Scenarios
+
+### Find Dependency Source
+
+```bash
+pm why @types/node
+# Shows which packages need Node.js types
+```
+
+### Debug Version Conflicts
+
+```bash
+pm why react
+# If multiple versions exist, shows all paths
+```
+
+### Identify Bloat
+
+```bash
+pm why large-package
+# Check if it's really needed
+```
+
+### Security Audit
+
+```bash
+pm why vulnerable-package
+# Find all dependents before removing
+```
+
+## Workflow Examples
+
+### Remove Unused Dependency
+
+<Steps>
+
+<Step title="Check Usage">
+
+```bash
+pm why lodash
+```
+
+</Step>
+
+<Step title="If No Direct Use">
+
+If it's only a transitive dependency, consider alternatives
+
+</Step>
+
+<Step title="If Direct Dependency">
+
+Remove safely:
+
+```bash
+pm remove lodash
+```
+
+</Step>
+
+</Steps>
+
+### Investigate Duplicate
+
+<Steps>
+
+<Step title="Check Why Installed">
+
+```bash
+pm why react
+```
+
+</Step>
+
+<Step title="Review Version Ranges">
+
+Check if dependencies can use the same version
+
+</Step>
+
+<Step title="Update Dependencies">
+
+Align versions to remove duplicates:
+
+```bash
+pm up react
+```
+
+</Step>
+
+</Steps>
+
+## Related Commands
+
+* [pm ls](/commands/ls) - List installed dependencies
+* [pm remove](/commands/remove) - Remove dependencies
+* [pm up](/commands/up) - Update dependencies
+

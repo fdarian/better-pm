@@ -1,0 +1,362 @@
+---
+title: "pm x"
+description: "Execute packages without installing"
+---
+
+## Overview
+
+The `pm x` command executes packages directly from the registry without permanently installing them. It's the Better PM equivalent of `npx`, `pnpx`, or `bunx`, automatically using the right tool for your package manager.
+
+## Syntax
+
+```bash
+pm x <package> [...args]
+```
+
+## Arguments
+
+**package** `string` *required*
+
+The package or command to execute
+
+**args** `string[]`
+
+Arguments to pass to the executed command
+
+## Examples
+
+### Run Package Binary
+
+```bash
+pm x typescript --version
+```
+
+```bash Output
+Running: pnpx typescript --version
+Version 5.0.0
+```
+
+### Execute One-off Command
+
+```bash
+pm x create-vite my-app
+```
+
+```bash Output
+Running: pnpx create-vite my-app
+```
+
+### Run CLI Tool
+
+```bash
+pm x prettier --write .
+```
+
+```bash Output
+Running: pnpx prettier --write .
+```
+
+### Execute with Arguments
+
+```bash
+pm x eslint --init
+```
+
+```bash Output
+Running: pnpx eslint --init
+```
+
+### Run Versioned Package
+
+```bash
+pm x typescript@4.9.0 --version
+```
+
+```bash Output
+Running: pnpx typescript@4.9.0 --version
+```
+
+## Package Manager Mapping
+
+Better PM automatically uses the appropriate execution tool:
+
+| Package Manager | Tool Used | Example |
+| - | - | - |
+| pnpm | `pnpx` | `pnpx create-vite` |
+| bun | `bunx` | `bunx create-vite` |
+| npm | `npx` | `npx create-vite` |
+
+:::note
+You don't need to remember which tool to use - `pm x` handles it automatically.
+:::
+
+From `src/commands/x.ts:13-14`:
+
+```typescript
+const execBin =
+  pm.name === 'pnpm' ? 'pnpx' : pm.name === 'bun' ? 'bunx' : 'npx';
+```
+
+## Use Cases
+
+### Project Scaffolding
+
+Create new projects without global installs:
+
+```bash
+pm x create-next-app my-app
+pm x create-vite my-app --template react
+pm x degit user/repo my-project
+```
+
+### One-time Tools
+
+Run tools you don't need permanently:
+
+```bash
+pm x prettier --check .
+pm x eslint --fix src/
+pm x markdownlint **/*.md
+```
+
+### Version Testing
+
+Test different package versions:
+
+```bash
+pm x typescript@5.0.0 --version
+pm x typescript@4.9.0 --version
+pm x typescript@latest --version
+```
+
+### CI/CD Scripts
+
+Run commands without adding to dependencies:
+
+```bash
+pm x semantic-release
+pm x commitizen
+pm x lint-staged
+```
+
+## Common Commands
+
+### Create Projects
+
+<CodeGroup>
+
+```bash Next.js
+pm x create-next-app@latest
+```
+
+```bash Vite
+pm x create-vite
+```
+
+```bash Remix
+pm x create-remix@latest
+```
+
+```bash Astro
+pm x create-astro@latest
+```
+
+</CodeGroup>
+
+### Development Tools
+
+<CodeGroup>
+
+```bash Prettier
+pm x prettier --write .
+```
+
+```bash ESLint
+pm x eslint --init
+```
+
+```bash TypeScript
+pm x tsc --init
+```
+
+```bash Playwright
+pm x playwright install
+```
+
+</CodeGroup>
+
+### Generators
+
+<CodeGroup>
+
+```bash License
+pm x license mit > LICENSE
+```
+
+```bash Gitignore
+pm x gitignore node
+```
+
+```bash Readme
+pm x readme-md-generator
+```
+
+</CodeGroup>
+
+## How It Works
+
+From `src/commands/x.ts:10-19`:
+
+```typescript
+export const xCmd = cli.Command.make('x', { args: argsArg }, (args) =>
+  Effect.gen(function* () {
+    const pm = yield* PackageManagerService;
+    const execBin =
+      pm.name === 'pnpm' ? 'pnpx' : pm.name === 'bun' ? 'bunx' : 'npx';
+    const passthrough = Array.from(args.args);
+    const cmd = ShellCommand.make(execBin, ...passthrough);
+    yield* Console.log(`Running: ${execBin} ${passthrough.join(' ')}`);
+    yield* runShellCommand(cmd);
+  }).pipe(Effect.provide(PackageManagerLayer)),
+);
+```
+
+The command:
+
+1. Detects your package manager
+2. Maps to the appropriate execution binary (npx/pnpx/bunx)
+3. Passes all arguments through
+4. Executes the command
+
+## Benefits
+
+### No Global Installs
+
+Keep your global environment clean:
+
+```bash
+# Instead of:
+npm install -g create-vite
+create-vite my-app
+
+# Use:
+pm x create-vite my-app
+```
+
+### Always Latest Version
+
+Run the latest version without updating:
+
+```bash
+pm x create-next-app@latest
+# Always gets the newest version
+```
+
+### Try Before Installing
+
+Test tools before adding to package.json:
+
+```bash
+pm x vitest
+# Try it out first
+
+# If you like it:
+pm add -D vitest
+```
+
+### Package Manager Agnostic
+
+Same command works everywhere:
+
+```bash
+pm x prettier --write .
+# Works with pnpm, bun, or npm
+```
+
+## Performance
+
+Execution tools cache packages for faster subsequent runs:
+
+```bash
+# First run (downloads package)
+pm x prettier --version
+# ~2-3 seconds
+
+# Second run (uses cache)
+pm x prettier --version
+# ~200ms
+```
+
+:::tip
+For frequently used tools, consider installing them locally with `pm add -D` for even better performance.
+:::
+
+## Best Practices
+
+### Use for Generators
+
+```bash
+# Perfect for project creation
+pm x create-vite my-app
+```
+
+### Use for One-off Tasks
+
+```bash
+# Great for occasional commands
+pm x prettier --check .
+```
+
+### Install for Repeated Use
+
+```bash
+# If used frequently, install it
+pm add -D prettier
+pm run format
+```
+
+### Pin Versions for Consistency
+
+```bash
+# In CI/CD, use specific versions
+pm x prettier@2.8.0 --check .
+```
+
+## Common Workflows
+
+### Quick Project Setup
+
+```bash
+pm x create-vite my-app --template react-ts
+cd my-app
+pm install
+pm run dev
+```
+
+### Format and Lint
+
+```bash
+pm x prettier --write .
+pm x eslint --fix src/
+```
+
+### Generate Files
+
+```bash
+pm x license mit > LICENSE
+pm x gitignore node > .gitignore
+```
+
+### Run Scripts
+
+```bash
+pm x tsx src/script.ts
+pm x ts-node src/script.ts
+```
+
+## Related Commands
+
+* [pm run](/commands/run) - Run package.json scripts
+* [pm add](/commands/add) - Install packages permanently
+* [pm install](/commands/install) - Install all dependencies
+

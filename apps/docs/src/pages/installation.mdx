@@ -1,0 +1,215 @@
+---
+title: "Installation"
+description: "Install Better PM and set up shell integration"
+---
+
+Better PM can be installed via Homebrew (recommended) or npm. After installation, you'll set up shell integration to enable features like `pm cd`.
+
+## System Requirements
+
+* **Operating System**: macOS (arm64/x64) or Linux (x64/arm64)
+* **Shell**: zsh or bash (for shell integration)
+* **Node.js**: Not required for Homebrew install; v16+ required for npm install
+
+## Install with Homebrew
+
+:::note
+**Recommended**: Homebrew installs a native binary, so shell completions resolve in \~60ms. The npm version uses Node.js and is slightly slower.
+:::
+
+Install from the custom tap:
+
+```bash
+brew install fdarian/tap/better-pm
+```
+
+Verify the installation:
+
+```bash
+pm --version
+```
+
+You should see version `0.3.3` or later.
+
+## Install with npm
+
+If you prefer npm or don't have Homebrew:
+
+```bash
+npm install -g better-pm
+```
+
+Verify the installation:
+
+```bash
+pm --version
+```
+
+:::note
+The npm installation includes optional native binaries for your platform (`better-pm-darwin-arm64`, `better-pm-linux-x64`, etc.) to improve performance.
+:::
+
+## Shell Integration
+
+Shell integration is **required** for `pm cd` to work properly. The `pm activate` command outputs shell wrapper functions and completions.
+
+<Steps>
+
+<Step title="Generate shell integration code">
+
+Run the activate command for your shell:
+
+```bash
+pm activate zsh   # For zsh
+# or
+pm activate bash  # For bash
+```
+
+This outputs shell code that wraps the `pm` command and adds completions.
+
+</Step>
+
+<Step title="Add to your shell profile">
+
+Add the following line to your shell configuration file:
+
+<CodeGroup>
+
+```bash .zshrc
+# Add to ~/.zshrc
+eval "$(pm activate zsh)"
+```
+
+```bash .bashrc
+# Add to ~/.bashrc
+eval "$(pm activate bash)"
+```
+
+</CodeGroup>
+
+:::tip
+You can also add this to `~/.zprofile` (zsh) or `~/.bash_profile` (bash) if you prefer.
+:::
+
+</Step>
+
+<Step title="Reload your shell">
+
+Source your configuration file or restart your terminal:
+
+```bash
+source ~/.zshrc   # For zsh
+# or
+source ~/.bashrc  # For bash
+```
+
+</Step>
+
+<Step title="Verify shell integration">
+
+Test that `pm cd` works:
+
+```bash
+pm cd
+```
+
+If you're in a monorepo, this should change to the root directory. If not, it will output the current directory (meaning shell integration isn't active yet).
+
+</Step>
+
+</Steps>
+
+## What the Shell Wrapper Does
+
+The `pm activate` command generates a shell function that intercepts `pm cd` commands:
+
+```bash
+pm() {
+  if [ "$1" = "cd" ]; then
+    # Run 'pm cd' to get the target directory
+    local dir;
+    dir=$(command pm cd "$@");
+    if [ $? -eq 0 ] && [ -d "$dir" ]; then
+      builtin cd "$dir";  # Actually change directory
+    fi;
+  else
+    command pm "$@";  # Run other pm commands normally
+  fi;
+};
+```
+
+It also sets up completions so you can tab-complete workspace package names after `pm cd`.
+
+## Verify Installation
+
+Confirm everything is working:
+
+<Steps>
+
+<Step title="Check version">
+
+```bash
+pm --version
+```
+
+Should output `0.3.3` or later.
+
+</Step>
+
+<Step title="Test package manager detection">
+
+Navigate to any project with a lockfile and run:
+
+```bash
+pm i --help
+```
+
+Better PM should detect your package manager automatically.
+
+</Step>
+
+<Step title="Test completions">
+
+In a monorepo, type `pm cd ` and press Tab. You should see your workspace packages listed.
+
+</Step>
+
+</Steps>
+
+## Troubleshooting
+
+:::warning
+**Shell integration not working?** Make sure you:
+
+1. Added `eval "$(pm activate <shell>)"` to the correct file (`~/.zshrc` or `~/.bashrc`)
+2. Reloaded your shell with `source ~/.zshrc` or opened a new terminal
+3. Verified the function is loaded with `type pm` — you should see a shell function, not just the binary path
+:::
+
+### Permission Issues
+
+If you get `EACCES` errors with npm global install:
+
+```bash
+sudo npm install -g better-pm
+```
+
+Or configure npm to use a different directory without sudo ([see npm docs](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)).
+
+### Completion Conflicts
+
+If completions don't work, check for conflicts with other completion systems:
+
+```bash
+which pm        # Should point to /usr/local/bin/pm or ~/.nvm/.../pm
+type pm         # Should show a shell function
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" href="/quickstart">
+    Learn the basic commands and try your first workflow
+  </Card>
+</CardGroup>
+

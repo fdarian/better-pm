@@ -1,0 +1,126 @@
+---
+title: "pm add"
+description: "Add dependencies to your project"
+---
+
+## Overview
+
+The `pm add` command adds dependencies to your project. It supports paste-friendly syntax that automatically extracts package names and flags from common package manager commands.
+
+## Syntax
+
+```bash
+pm add <packages...> [options]
+```
+
+## Options
+
+**-D** `boolean` (default: false)
+
+Add as a dev dependency
+
+## Arguments
+
+**packages** `string[]` *required*
+
+One or more package names to install. Supports paste-friendly syntax.
+
+## Paste-Friendly Syntax
+
+Better PM intelligently parses common package manager commands, allowing you to paste commands directly from READMEs:
+
+<CodeGroup>
+
+```bash npm install
+pm add "npm install -D typescript"
+# Automatically extracts: -D flag and package name
+```
+
+```bash pnpm add
+pm add "pnpm add foo bar"
+# Extracts: foo and bar as packages
+```
+
+```bash bun add
+pm add "bun add -D @scope/pkg"
+# Extracts: -D flag and scoped package name
+```
+
+</CodeGroup>
+
+:::tip
+You can paste entire install commands and Better PM will automatically extract the packages and flags.
+:::
+
+## Examples
+
+### Add Production Dependency
+
+```bash
+pm add express
+```
+
+```bash Output
+Running: pnpm add express
+```
+
+### Add Development Dependency
+
+```bash
+pm add -D typescript
+```
+
+```bash Output
+Running: pnpm add -D typescript
+```
+
+### Add Multiple Packages
+
+```bash
+pm add react react-dom
+```
+
+```bash Output
+Running: pnpm add react react-dom
+```
+
+### Add Scoped Package
+
+```bash
+pm add @types/node -D
+```
+
+```bash Output
+Running: pnpm add -D @types/node
+```
+
+### Paste Package Manager Commands
+
+```bash
+# Copy from a README
+pm add "npm install --save-dev eslint prettier"
+```
+
+```bash Output
+Running: pnpm add -D eslint prettier
+```
+
+:::note
+Better PM automatically detects your project's package manager (pnpm, bun, or npm) and uses the appropriate command.
+:::
+
+## How It Works
+
+The `add` command uses the `resolveAddArgs` function from `src/lib/parse-pm-command.ts` to intelligently parse the input:
+
+1. Detects common package manager command patterns
+2. Extracts the `-D` (or `--save-dev`) flag if present
+3. Extracts package names, including scoped packages
+4. Passes clean arguments to the underlying package manager
+
+## Related Commands
+
+* [pm remove](/commands/remove) - Remove dependencies
+* [pm install](/commands/install) - Install dependencies
+* [pm up](/commands/up) - Update dependencies
+

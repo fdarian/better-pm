@@ -1,0 +1,264 @@
+---
+title: "Contributing"
+description: "How to contribute to Better PM development"
+---
+
+Thank you for your interest in contributing to Better PM! This guide will help you get started with development, testing, and submitting changes.
+
+## Quick Start
+
+:::note
+Better PM is built with [Bun](https://bun.sh) and [Effect](https://effect.website). Familiarity with these tools is helpful but not required to contribute.
+:::
+
+### Prerequisites
+
+You'll need:
+
+* [Bun](https://bun.sh) installed (v1.0 or later)
+* [Git](https://git-scm.com/) for version control
+* A GitHub account for pull requests
+
+### Development Setup
+
+<CodeGroup>
+
+```bash Clone Repository
+# Fork the repository on GitHub first, then:
+git clone https://github.com/YOUR_USERNAME/better-pm.git
+cd better-pm
+```
+
+```bash Install Dependencies
+bun install
+```
+
+```bash Verify Setup
+# Run type checking
+bun run check:tsc
+
+# Test the CLI locally
+bun entries/cli.ts i
+```
+
+</CodeGroup>
+
+## Project Structure
+
+Understanding the codebase structure will help you navigate and contribute effectively:
+
+```
+better-pm/
+├── entries/
+│   └── cli.ts              # Effect CLI bootstrap and entry point
+├── src/
+│   ├── commands/           # Command implementations
+│   │   ├── install.ts      # pm i - monorepo-aware install
+│   │   ├── add.ts          # pm add - add dependencies
+│   │   ├── remove.ts       # pm remove - remove dependencies
+│   │   ├── ls.ts           # pm ls - list workspace packages
+│   │   ├── cd.ts           # pm cd - navigate to packages
+│   │   └── activate.ts     # pm activate - shell integration
+│   ├── pm/                 # Package manager abstraction
+│   │   ├── pnpm.ts         # pnpm implementation
+│   │   ├── bun.ts          # bun implementation
+│   │   ├── npm.ts          # npm implementation
+│   │   └── detect.ts       # Auto-detection logic
+│   ├── project/
+│   │   └── find-upward.ts  # Upward file traversal utility
+│   └── lib/
+│       └── errors.ts       # Tagged error definitions
+├── scripts/
+│   ├── build-npm.ts        # Build script for npm distribution
+│   └── publish-npm.ts      # Publication script
+└── bin.mjs                 # CLI entry point for npm distribution
+```
+
+## Development Workflow
+
+### Making Changes
+
+1. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes**\
+   Edit the relevant files in `src/` or add new commands in `src/commands/`
+
+3. **Test your changes**
+   ```bash
+   # Type check
+   bun run check:tsc
+
+   # Run tests
+   bun test
+
+   # Test CLI locally
+   bun entries/cli.ts <command> <args>
+   ```
+
+4. **Format code**
+   ```bash
+   bun run format
+   ```
+
+### Running Tests
+
+Better PM uses [Vitest](https://vitest.dev/) for testing:
+
+```bash
+# Run all tests
+bun test
+
+# Run tests in watch mode
+bun test --watch
+
+# Run specific test file
+bun test src/commands/install.test.ts
+```
+
+:::note
+When adding new features, please include tests to ensure reliability and prevent regressions.
+:::
+
+### Code Style Guidelines
+
+Better PM uses [Biome](https://biomejs.dev/) for formatting and linting:
+
+* **Formatting**: Run `bun run format` before committing
+* **Type safety**: All code must pass TypeScript strict mode checks
+* **Effect patterns**: Follow Effect-TS best practices for error handling and composition
+* **Naming**: Use descriptive names for functions and variables
+
+### Testing Your Changes Locally
+
+Before submitting a PR, test your changes in a real project:
+
+```bash
+# In the better-pm directory
+bun link
+
+# In your test project
+bun link better-pm
+
+# Now 'pm' will use your local development version
+pm i
+pm add lodash
+```
+
+:::warning
+Remember to `bun unlink better-pm` in your test project when you're done testing.
+:::
+
+## Submitting Changes
+
+### Pull Request Process
+
+1. **Push your branch**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+2. **Create a pull request**\
+   Go to [github.com/fdarian/better-pm/pulls](https://github.com/fdarian/better-pm/pulls) and create a new PR
+
+3. **Fill out the PR template**
+   * Describe what your change does and why
+   * Link any related issues
+   * Include screenshots/examples if applicable
+
+4. **Wait for review**\
+   Maintainers will review your PR and may request changes
+
+### Commit Message Guidelines
+
+Better PM uses [Changesets](https://github.com/changesets/changesets) for version management:
+
+* Write clear, descriptive commit messages
+* Use present tense ("Add feature" not "Added feature")
+* Reference issues where applicable (`Fixes #123`)
+
+### Adding a Changeset
+
+For changes that affect the public API or user-facing behavior:
+
+```bash
+bunx changeset
+```
+
+Follow the prompts to:
+
+1. Select the type of change (major/minor/patch)
+2. Write a summary of the change
+3. Commit the generated changeset file
+
+## Contributing to Documentation
+
+Documentation improvements are always welcome! You can:
+
+* Edit docs directly on GitHub by clicking "Edit this page" on any documentation page
+* Suggest improvements by opening an issue
+* Fix typos and improve clarity
+
+## Types of Contributions
+
+We welcome various types of contributions:
+
+> **Bug Fixes**
+>
+> Found a bug? Open an issue first to discuss it, then submit a PR with:
+>
+> * A test that reproduces the bug
+> * The fix implementation
+> * Updated documentation if needed
+
+> **New Features**
+>
+> Want to add a new command or feature?
+>
+> * Open an issue to discuss the feature first
+> * Ensure it aligns with Better PM's goals
+> * Include comprehensive tests
+> * Update documentation and changelog
+
+> **Performance Improvements**
+>
+> Optimizations are welcome! Include:
+>
+> * Benchmarks showing the improvement
+> * Tests ensuring behavior hasn't changed
+> * Description of the optimization technique
+
+> **Documentation**
+>
+> Help make Better PM easier to use:
+>
+> * Fix typos and unclear explanations
+> * Add examples and use cases
+> * Improve error messages
+> * Expand getting started guides
+
+## Getting Help
+
+Need help with your contribution?
+
+* **GitHub Discussions**: Ask questions and share ideas
+* **Issues**: Report bugs or request features
+* **Discord**: Join our community (link in README)
+
+## Code of Conduct
+
+Be respectful and constructive in all interactions. We're building Better PM together, and everyone's contributions are valued.
+
+## Resources
+
+* [GitHub Repository](https://github.com/fdarian/better-pm)
+* [Effect Documentation](https://effect.website/docs/introduction)
+* [Bun Documentation](https://bun.sh/docs)
+* [Changesets Documentation](https://github.com/changesets/changesets)
+
+:::note
+Questions about contributing? Feel free to open an issue labeled `question` or reach out on GitHub Discussions.
+:::
+

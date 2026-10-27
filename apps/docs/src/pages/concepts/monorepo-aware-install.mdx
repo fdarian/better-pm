@@ -1,0 +1,273 @@
+---
+title: "Monorepo-Aware Install"
+description: "How Better PM automatically scopes installs based on your location in the workspace"
+---
+
+Better PM detects your position in a monorepo and automatically adjusts install behavior to prevent accidental full-monorepo installations.
+
+## How Context Detection Works
+
+When you run `pm i`, Better PM analyzes your current directory to determine the **monorepo context**:
+
+<Steps>
+
+<Step title="Find the nearest package.json">
+
+Better PM searches upward from your current directory using `findUpward('package.json')` to locate the nearest package definition.
+
+```typescript
+// From src/commands/install.ts:27-39
+const findPackageJson = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  
+  const pkgPath = yield* findUpward('package.json').pipe(Effect.option);
+  if (pkgPath._tag === 'None') {
+    return null;
+  }
+  
+  const content = yield* fs.readFileString(pkgPath.value);
+  const pkg = yield* Schema.decode(Schema.parseJson(PackageJson))(content);
+  return { dir: path.dirname(pkgPath.value), name: pkg.name };
+});
+```
+
+</Step>
+
+<Step title="Determine context type">
+
+Better PM compares the package.json location with the lock file directory to determine if you're in:
+
+* **A package directory**: When the package.json is in a subdirectory of the lock file location
+* **The root directory**: When the package.json is at the same level as the lock file
+
+```typescript
+// From src/commands/install.ts:58-66
+if (
+  lockDirNormalized !== pkgDirNormalized &&
+  pkgDirNormalized.startsWith(lockDirNormalized)
+) {
+  return {
+    type: 'package',
+    lockDir: pm.lockDir,
+    packageName: pkgResult.name,
+  } as MonorepoContext;
+}
+```
+
+</Step>
+
+<Step title="Apply appropriate install strategy">
+
+Based on the detected context, Better PM either:
+
+* Auto-scopes the install to the current package and its dependencies
+* Shows a warning and requires confirmation for root-level installs
+
+</Step>
+
+</Steps>
+
+## Auto-Scoping from Package Directories
+
+When you run `pm i` from inside a workspace package, Better PM automatically filters the install to that package:
+
+```bash
+cd apps/web
+pm i  # Only installs @myapp/web and its workspace dependencies
+```
+
+### How Auto-Filtering Works
+
+Better PM builds a filtered install command based on the package manager:
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:46-47
+resolveInstallFilters: (_lockDir: string, packageName: string) =>
+  Effect.succeed([`${packageName}...`]),
+```
+
+```typescript bun
+// From src/pm/bun.ts:65-73
+resolveInstallFilters: (lockDir: string, packageName: string) =>
+  Effect.gen(function* () {
+    const allPackages = 
+      yield* bunPackageManager.listWorkspacePackages(lockDir);
+    return yield* collectWorkspaceDependencies(
+      lockDir,
+      packageName,
+      allPackages,
+    );
+  }),
+```
+
+```typescript npm
+// From src/pm/npm.ts:56-64
+resolveInstallFilters: (lockDir: string, packageName: string) =>
+  Effect.gen(function* () {
+    const allPackages = 
+      yield* npmPackageManager.listWorkspacePackages(lockDir);
+    return yield* collectWorkspaceDependencies(
+      lockDir,
+      packageName,
+      allPackages,
+    );
+  }),
+```
+
+</CodeGroup>
+
+:::note
+**pnpm** uses the `...` suffix (e.g., `@myapp/web...`) which installs the package and all its dependencies.
+
+**bun** and **npm** resolve the full dependency graph of workspace packages by reading `package.json` files and following `workspace:` protocol dependencies.
+:::
+
+The install command then executes:
+
+```typescript
+// From src/commands/install.ts:140-149
+if (ctx.type === 'package') {
+  const filters = yield* pm.resolveInstallFilters(
+    ctx.lockDir,
+    ctx.packageName,
+  );
+  const cmd = pm.buildFilteredInstallCommand(filters);
+  yield* Console.log(
+    `Running ${pm.name} install filtered to ${filters.join(', ')}`
+  );
+  yield* runShellCommand(cmd);
+  return;
+}
+```
+
+## Root Directory Warnings
+
+When you run `pm i` at the monorepo root, Better PM protects you from accidentally installing all packages:
+
+```bash
+# From the root directory
+pm i
+
+[WARNING] You are at the monorepo root. This will install ALL packages.
+
+Workspace packages:
+├── packages/
+│   ├── core "@myapp/core"
+│   └── utils "@myapp/utils"
+└── apps/
+    └── web "@myapp/web"
+
+To install a specific package:
+  pm i -F <package-name>
+
+To install everything:
+  pm i -y
+```
+
+### Safety Features
+
+<CardGroup cols={2}>
+  <Card title="Workspace Package List">
+
+The warning displays a formatted tree of all workspace packages using the `formatWorkspaceTree` function, helping you understand the scope of what would be installed.
+
+  </Card>
+  <Card title="Confirmation Prompt">
+
+In interactive environments, Better PM prompts for confirmation before proceeding with a full install. The prompt can be bypassed with the `-y` or `--sure` flag.
+
+  </Card>
+</CardGroup>
+
+```typescript
+// From src/commands/install.ts:153-160
+if (ctx.hasWorkspaces && !args.sure) {
+  const packages = yield* pm.listWorkspacePackages(ctx.lockDir);
+  const proceed = yield* confirmRootInstall({
+    packages,
+    pathSep: path.sep,
+  });
+  if (!proceed) return;
+}
+```
+
+## Filter Flag Usage
+
+You can manually specify which packages to install using the `-F` or `--filter` flag:
+
+```bash
+# Install a single package
+pm i -F @myapp/web
+
+# Install multiple packages
+pm i -F @myapp/web -F @myapp/api
+
+# Works from anywhere in the monorepo
+pm i -F @myapp/core
+```
+
+### How Filters Override Auto-Scoping
+
+When filters are provided, they take precedence over context detection:
+
+```typescript
+// From src/commands/install.ts:131-138
+if (filters.length > 0) {
+  const cmd = pm.buildFilteredInstallCommand(filters);
+  yield* Console.log(
+    `Running: ${pm.name} install with filters: ${filters.join(', ')}`
+  );
+  yield* runShellCommand(cmd);
+  return;
+}
+```
+
+The filter flag is converted to the appropriate package manager syntax:
+
+<CodeGroup>
+
+```bash pnpm
+pnpm -F @myapp/web -F @myapp/api install
+```
+
+```bash bun  
+bun install --filter @myapp/web --filter @myapp/api
+```
+
+```bash npm
+npm install -w @myapp/web -w @myapp/api
+```
+
+</CodeGroup>
+
+:::warning
+Filters bypass the root directory warning, so use them carefully when installing multiple packages from the root.
+:::
+
+## Context Type Reference
+
+Better PM uses two context types internally:
+
+```typescript
+// From src/commands/install.ts:11-21
+type MonorepoContext =
+  | {
+      type: 'root';
+      lockDir: string;
+      hasWorkspaces: boolean;
+    }
+  | {
+      type: 'package';
+      lockDir: string;
+      packageName: string;
+    };
+```
+
+* **root**: You're at the monorepo root or in a directory without a package.json
+* **package**: You're inside a workspace package directory
+
+This context drives all auto-scoping and warning behavior in Better PM.
+

@@ -1,0 +1,104 @@
+---
+title: "pm remove"
+description: "Remove dependencies from your project"
+---
+
+## Overview
+
+The `pm remove` command removes one or more dependencies from your project. It works with both production and development dependencies.
+
+## Syntax
+
+```bash
+pm remove <packages...>
+```
+
+## Arguments
+
+**packages** `string[]` *required*
+
+One or more package names to remove
+
+## Examples
+
+### Remove Single Package
+
+```bash
+pm remove lodash
+```
+
+```bash Output
+Running: pnpm remove lodash
+```
+
+### Remove Multiple Packages
+
+```bash
+pm remove lodash axios express
+```
+
+```bash Output
+Running: pnpm remove lodash axios express
+```
+
+### Remove Scoped Package
+
+```bash
+pm remove @types/node
+```
+
+```bash Output
+Running: pnpm remove @types/node
+```
+
+### Remove Dev Dependency
+
+```bash
+pm remove typescript
+```
+
+```bash Output
+Running: pnpm remove typescript
+```
+
+:::note
+Unlike `pm add`, the `remove` command doesn't need a `-D` flag. It automatically removes the package regardless of whether it's a production or dev dependency.
+:::
+
+## How It Works
+
+The `remove` command:
+
+1. Accepts one or more package names
+2. Detects your project's package manager (pnpm, bun, or npm)
+3. Builds the appropriate remove command
+4. Executes the removal
+
+From `src/commands/remove.ts:18`:
+
+```typescript
+const cmd = pm.buildRemoveCommand(packages);
+yield* Console.log(`Running: ${pm.name} remove ${packages.join(' ')}`);
+yield* runShellCommand(cmd);
+```
+
+## Package Manager Compatibility
+
+The command works across all supported package managers:
+
+| Package Manager | Command |
+| - | - |
+| pnpm | `pnpm remove <packages>` |
+| bun | `bun remove <packages>` |
+| npm | `npm uninstall <packages>` |
+
+:::note
+Better PM automatically uses the correct command for your project's package manager.
+:::
+
+## Related Commands
+
+* [pm add](/commands/add) - Add dependencies
+* [pm install](/commands/install) - Install dependencies
+* [pm why](/commands/why) - Explain why a package is installed
+

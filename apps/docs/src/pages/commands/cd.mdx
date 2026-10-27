@@ -1,0 +1,193 @@
+---
+title: "pm cd"
+description: "Navigate to workspace packages"
+---
+
+## Overview
+
+The `pm cd` command helps you navigate to workspace packages in your monorepo. When combined with shell integration, it allows you to quickly jump between packages from anywhere in your project.
+
+:::warning
+Shell integration via `pm activate` is required for the actual directory change functionality. Without it, `pm cd` only prints the path.
+:::
+
+## Syntax
+
+```bash
+pm cd [package-name] [options]
+```
+
+## Arguments
+
+**package-name** `string`
+
+The name of the workspace package to navigate to. If omitted, returns to monorepo root.
+
+## Options
+
+**-p, --path** `boolean` (default: false)
+
+Print the absolute path without navigation
+
+**--completions** `boolean` (default: false)
+
+Output package names for shell completion (internal use)
+
+## Examples
+
+### Navigate to Package
+
+```bash
+pm cd @myapp/web
+```
+
+```bash Output
+# With shell integration: changes to the package directory
+# Without shell integration: prints the path
+/path/to/monorepo/apps/web
+```
+
+### Return to Root
+
+```bash
+pm cd
+```
+
+```bash Output
+# Changes to (or prints) the monorepo root directory
+/path/to/monorepo
+```
+
+### Get Package Path
+
+```bash
+pm cd @myapp/api --path
+```
+
+```bash Output
+/path/to/monorepo/services/api
+```
+
+### Use in Scripts
+
+```bash
+# Store path for later use
+PKG_PATH=$(pm cd @myapp/web --path)
+echo "Package is at: $PKG_PATH"
+```
+
+## Shell Integration
+
+To enable actual directory changes, activate shell integration:
+
+<CodeGroup>
+
+```bash zsh
+# Add to ~/.zshrc
+eval "$(pm activate zsh)"
+```
+
+```bash bash
+# Add to ~/.bashrc
+eval "$(pm activate bash)"
+```
+
+</CodeGroup>
+
+This installs a wrapper function that:
+
+1. Calls `pm cd` to get the directory path
+2. Uses the shell's `cd` builtin to actually change directories
+3. Provides tab completion for package names
+
+From `src/commands/activate.ts:6-22`:
+
+```bash
+pm() {
+  if [ "$1" = "cd" ]; then
+    shift;
+    for arg in "$@"; do
+      case "$arg" in
+        -*) command pm cd "$@"; return;;
+      esac;
+    done;
+    local dir;
+    dir=$(command pm cd "$@");
+    if [ $? -eq 0 ] && [ -d "$dir" ]; then
+      builtin cd "$dir";
+    fi;
+  else
+    command pm "$@";
+  fi;
+};
+```
+
+## Shell Completion
+
+With shell integration, tab completion works automatically:
+
+```bash
+pm cd <TAB>
+# Shows all workspace package names
+@myapp/api    @myapp/core    @myapp/web    @myapp/utils
+
+pm cd @myapp/<TAB>
+# Completes package names
+```
+
+## Error Handling
+
+If a package doesn't exist, you'll see an error with available packages:
+
+```bash
+pm cd @myapp/nonexistent
+```
+
+```bash Output
+Error: Package "@myapp/nonexistent" not found
+
+Available packages:
+├── packages/
+│   ├── core "@myapp/core"
+│   └── utils "@myapp/utils"
+└── apps/
+    └── web "@myapp/web"
+```
+
+## How It Works
+
+From `src/commands/cd.ts:38-55`:
+
+```typescript
+if (Option.isNone(args.packageName)) {
+  yield* Console.log(pm.lockDir);
+  return;
+}
+
+const packageName = args.packageName.value;
+const pkg = packages.find((p) => p.name === packageName);
+
+if (!pkg) {
+  return yield* Effect.fail(
+    new PackageNotFoundError(
+      packageName,
+      formatWorkspaceTree(packages, path.sep),
+    ),
+  );
+}
+
+yield* Console.log(path.resolve(pm.lockDir, pkg.relDir));
+```
+
+The command:
+
+1. Lists all workspace packages
+2. Finds the package by name
+3. Resolves the absolute path
+4. Prints the path (shell wrapper handles the actual cd)
+
+## Related Commands
+
+* [pm pls](/commands/pls) - List all workspace packages
+* [pm activate](/commands/activate) - Set up shell integration
+

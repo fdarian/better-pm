@@ -1,0 +1,102 @@
+---
+title: "Introduction"
+description: "A CLI for smarter package manager operations in monorepos"
+---
+
+Better PM is a command-line tool that makes working with package managers easier, especially in monorepo environments. It automatically detects whether your project uses pnpm, bun, or npm, and provides intelligent defaults that prevent common mistakes.
+
+## The Problem
+
+Working with package managers in monorepos can be frustrating:
+
+* **Wrong package manager**: You need to remember which package manager each project uses
+* **Accidental full installs**: Running `pnpm install` at the monorepo root installs everything, which can take minutes
+* **Complex filter syntax**: Installing a single package requires memorizing filter flags like `pnpm install --filter "@myapp/web..."`
+* **Navigation difficulty**: Jumping between workspace packages means manually typing full paths
+
+## The Solution
+
+Better PM solves these problems with three core features:
+
+### 1. Package Manager Agnostic
+
+You don't need to remember whether your project uses pnpm, bun, or npm. Just type `pm` and it automatically detects the right package manager based on your lockfile.
+
+```bash
+pm i              # Uses pnpm if pnpm-lock.yaml exists
+pm add lodash     # Uses bun if bun.lockb exists
+pm remove axios   # Uses npm if package-lock.json exists
+```
+
+### 2. Scoped Installs by Default
+
+When you run `pm i` from inside a workspace package, it automatically installs **only that package** and its dependencies — not the entire monorepo.
+
+```bash
+cd apps/web
+pm i              # Installs only @myapp/web, not everything
+```
+
+At the monorepo root, `pm i` shows a safety warning with your workspace packages listed, so you can make an informed decision.
+
+### 3. Easy Workspace Navigation
+
+List all packages in your monorepo:
+
+```bash
+pm pls
+```
+
+Jump to any workspace package instantly:
+
+```bash
+pm cd @myapp/web    # cd into the workspace package
+pm cd              # cd to monorepo root
+```
+
+## Who Should Use This
+
+<CardGroup cols={2}>
+  <Card title="Monorepo Teams">
+
+Teams working with pnpm workspaces, bun workspaces, or npm workspaces will benefit from automatic scoped installs and easy navigation.
+
+  </Card>
+  <Card title="Multi-Project Developers">
+
+Developers who switch between projects using different package managers no longer need to remember which command to use.
+
+  </Card>
+  <Card title="CI/CD Pipelines">
+
+The `--sure` flag makes monorepo root installs explicit, preventing accidental full installs in automation scripts.
+
+  </Card>
+  <Card title="Open Source Maintainers">
+
+Contributors to your project can use `pm` commands without needing to know your package manager preference.
+
+  </Card>
+</CardGroup>
+
+## Key Features
+
+* **Auto-detection**: Identifies pnpm, bun, or npm based on lockfiles
+* **Monorepo-aware**: Automatically filters installs when inside workspace packages
+* **Safety warnings**: Confirms before installing all packages at monorepo root
+* **Paste-friendly**: `pm add "npm install -D something"` extracts the package and flags automatically
+* **Shell integration**: `pm cd` actually changes directory with shell wrapper
+* **Fast completions**: Native binary provides \~60ms shell completion (Homebrew install)
+* **Proxy commands**: `pm run`, `pm why`, `pm x`, and more pass through to underlying package manager
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" href="/installation">
+    Install Better PM with Homebrew or npm
+  </Card>
+  <Card title="Quickstart" href="/quickstart">
+    Get started with basic commands and workflows
+  </Card>
+</CardGroup>
+

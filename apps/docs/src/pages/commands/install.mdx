@@ -1,0 +1,125 @@
+---
+title: "pm install"
+description: "Install dependencies with monorepo awareness"
+---
+
+## Overview
+
+The `pm install` (or `pm i`) command installs dependencies with intelligent monorepo awareness. It automatically scopes installation to the current package when you're inside a workspace package, and provides safety warnings when running at the monorepo root.
+
+## Syntax
+
+```bash
+pm i [options]
+pm install [options]
+```
+
+## Options
+
+**-y, --sure** `boolean` (default: false)
+
+Skip confirmation prompt when installing all packages from monorepo root
+
+**-F, --filter** `string[]`
+
+Filter installation to specific workspace package(s). Can be specified multiple times.
+
+## Behavior
+
+### From Workspace Package Directory
+
+When running `pm i` from inside a workspace package, Better PM automatically filters the installation to only that package and its dependencies:
+
+<CodeGroup>
+
+```bash Terminal
+cd apps/web
+pm i
+```
+
+```bash Output
+Running pnpm install filtered to @myapp/web (cmd: 'pnpm' 'install' '--filter' '@myapp/web...')
+```
+
+</CodeGroup>
+
+This prevents accidentally installing all packages in your monorepo when you only need one.
+
+### From Monorepo Root
+
+When running `pm i` from the monorepo root, Better PM shows a warning and lists all workspace packages:
+
+<CodeGroup>
+
+```bash Terminal
+pm i
+```
+
+```bash Output
+[WARNING] You are at the monorepo root. This will install ALL packages.
+
+Workspace packages:
+├── packages/
+│   ├── core "@myapp/core"
+│   └── utils "@myapp/utils"
+└── apps/
+    └── web "@myapp/web"
+
+To install a specific package:
+  pm i -F <package-name>
+
+To install everything:
+  pm i -y
+```
+
+</CodeGroup>
+
+:::note
+In non-interactive environments (like CI with `CLAUDECODE=1`), the command will not prompt for confirmation and will display the usage instructions instead.
+:::
+
+## Examples
+
+### Install Current Package
+
+```bash
+# From inside a workspace package
+pm i
+```
+
+### Install Specific Package(s)
+
+```bash
+# Install a single package
+pm i -F @myapp/web
+
+# Install multiple packages
+pm i -F @myapp/web -F @myapp/api
+```
+
+### Install All Packages
+
+```bash
+# From monorepo root with confirmation
+pm i -y
+
+# Or use --sure
+pm i --sure
+```
+
+### Install with Filters
+
+```bash
+# Install package and its dependents
+pm i -F @myapp/core...
+
+# Install package and its dependencies
+pm i -F ...@myapp/web
+```
+
+## Related Commands
+
+* [pm add](/commands/add) - Add new dependencies
+* [pm pls](/commands/pls) - List workspace packages
+* [pm cd](/commands/cd) - Navigate to workspace packages
+

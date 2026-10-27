@@ -1,0 +1,183 @@
+---
+title: "Changelog"
+description: "Release history and version updates for Better PM"
+---
+
+Track the evolution of Better PM through detailed release notes. Each version includes new features, improvements, and bug fixes.
+
+:::note
+Better PM follows [semantic versioning](https://semver.org/). Breaking changes are highlighted with warnings.
+:::
+
+## Version History
+
+<Accordion>
+  <AccordionItem title="v0.3.3 (Latest)">
+
+### Patch Changes
+
+**Automatic script passthrough**\
+Unknown CLI commands now automatically pass through as `pm run <script>`, eliminating the need to explicitly type `pm run` for package scripts.
+
+```bash
+# Before
+pm run dev
+
+# Now - just type the script name
+pm dev
+```
+
+**Enhanced package command parsing**\
+Auto-parse pasted package manager commands in `pm add`. Copy commands from READMEs and paste them directly:
+
+```bash
+pm add "npm install -D something"    # Extracts -D and package automatically
+pm add "pnpm add foo bar"            # Works with any PM command
+```
+
+**Improved install prompts**\
+Added `-y` alias for `--sure` flag and interactive root install prompt for better UX.
+
+**Commits**: [3cdcb90](https://github.com/fdarian/better-pm/commit/3cdcb90), [6275e01](https://github.com/fdarian/better-pm/commit/6275e01), [ab53453](https://github.com/fdarian/better-pm/commit/ab53453)
+
+  </AccordionItem>
+  <AccordionItem title="v0.3.2">
+
+### Patch Changes
+
+**Path printing for `pm cd`**\
+Added `--path` / `-p` flag to `pm cd` for printing the package directory path without requiring the shell wrapper.
+
+```bash
+pm cd @myapp/web --path    # Prints path instead of changing directory
+```
+
+This is useful for scripting and integration with other tools.
+
+**Commit**: [d031d47](https://github.com/fdarian/better-pm/commit/d031d47)
+
+  </AccordionItem>
+  <AccordionItem title="v0.3.1">
+
+### Patch Changes
+
+**Recursive workspace dependency resolution**\
+Workspace dependencies are now resolved recursively for bun/npm install filters, ensuring all transitive dependencies within the workspace are properly handled.
+
+**Commit**: [2314dfd](https://github.com/fdarian/better-pm/commit/2314dfd)
+
+  </AccordionItem>
+  <AccordionItem title="v0.3.0">
+
+### Minor Changes
+
+**New proxy commands**\
+Added several package manager proxy commands for a unified CLI experience:
+
+* `pm link` — Link packages across workspaces
+* `pm ls` — List installed dependencies (maps to `pnpm ls`, `bun pm ls`, `npm ls`)
+* `pm run` — Run package scripts
+* `pm unlink` — Unlink previously linked packages
+* `pm up` / `pm update` — Update dependencies with `-i` and `--latest` flag forwarding
+* `pm why` — Show why a package is installed (pnpm/bun only, unsupported for npm)
+* `pm x` — Execute packages (maps to `pnpx`, `bunx`, `npx`)
+
+```bash
+pm x create-react-app my-app    # Uses npx/pnpx/bunx based on project
+pm why lodash                    # Show dependency tree for lodash
+pm update -i                     # Interactive update mode
+```
+
+### Patch Changes
+
+> [!WARNING]
+>
+> **Breaking**: `pm ls` (workspace tree listing) renamed to `pm pls` to avoid conflict with the new proxy command.
+
+**Performance optimization**\
+Moved PackageManagerLayer to individual commands to avoid unnecessary package manager detection for commands that don't need it.
+
+**Commits**: [a2243e4](https://github.com/fdarian/better-pm/commit/a2243e4), [ff4eb5e](https://github.com/fdarian/better-pm/commit/ff4eb5e), [a01d51d](https://github.com/fdarian/better-pm/commit/a01d51d), [1e5c056](https://github.com/fdarian/better-pm/commit/1e5c056), [45f62d1](https://github.com/fdarian/better-pm/commit/45f62d1), [8e9f75f](https://github.com/fdarian/better-pm/commit/8e9f75f), [539d159](https://github.com/fdarian/better-pm/commit/539d159), [d0986cb](https://github.com/fdarian/better-pm/commit/d0986cb), [3c38a20](https://github.com/fdarian/better-pm/commit/3c38a20)
+
+  </AccordionItem>
+  <AccordionItem title="v0.2.1">
+
+### Patch Changes
+
+**Improved package filtering**\
+Append `...` suffix to auto-detected package filter during install to include sub-dependencies automatically.
+
+**Commit**: [5d72a6c](https://github.com/fdarian/better-pm/commit/5d72a6c)
+
+  </AccordionItem>
+  <AccordionItem title="v0.2.0">
+
+### Minor Changes
+
+**Workspace navigation commands**\
+Added `pm cd`, `pm ls`, and `pm activate` commands for seamless workspace package navigation:
+
+```bash
+pm ls                # List all workspace packages as tree
+pm cd @myapp/web     # Jump to workspace package
+pm activate zsh      # Enable shell integration
+```
+
+**Install command alias**\
+Added `pm install` as an alias for `pm i` command for users who prefer the explicit form.
+
+### Patch Changes
+
+**Better install feedback**\
+Show what command is running during install operations for better visibility.
+
+**Commits**: [8dc8f78](https://github.com/fdarian/better-pm/commit/8dc8f78), [9ee88f5](https://github.com/fdarian/better-pm/commit/9ee88f5), [cbf6554](https://github.com/fdarian/better-pm/commit/cbf6554)
+
+  </AccordionItem>
+  <AccordionItem title="v0.1.1">
+
+### Patch Changes
+
+**Dependency management commands**\
+Added `pm add` and `pm remove` commands for managing dependencies:
+
+```bash
+pm add lodash           # Add production dependency
+pm add -D typescript    # Add dev dependency
+pm remove lodash        # Remove dependency
+```
+
+**npm support**\
+Added npm package manager support alongside existing pnpm and bun support.
+
+**Filter behavior change**\
+Stopped auto-appending `...` to filter values in `pm i -F` for more explicit control.
+
+**Commits**: [057d222](https://github.com/fdarian/better-pm/commit/057d222), [fb71ac6](https://github.com/fdarian/better-pm/commit/fb71ac6), [251fe73](https://github.com/fdarian/better-pm/commit/251fe73)
+
+  </AccordionItem>
+  <AccordionItem title="v0.1.0">
+
+### Minor Changes
+
+**Initial release**\
+Introduced the `pm i` command with monorepo-aware installation:
+
+* Automatic package detection in workspace directories
+* Scoped installs by default to avoid full-monorepo installations
+* Warning prompts when installing from monorepo root
+* Support for pnpm and bun package managers
+
+**Commit**: [ce0b2f8](https://github.com/fdarian/better-pm/commit/ce0b2f8)
+
+  </AccordionItem>
+</Accordion>
+
+## Release Links
+
+View full release notes and downloads on [GitHub Releases](https://github.com/fdarian/better-pm/releases).
+
+:::note
+Want to contribute? Check out our [Contributing Guide](/reference/contributing) to get started.
+:::
+

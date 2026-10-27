@@ -1,0 +1,136 @@
+---
+title: "pm run"
+description: "Run package.json scripts"
+---
+
+## Overview
+
+The `pm run` command executes scripts defined in your `package.json` file. It's a simple passthrough to your package manager's run command.
+
+## Syntax
+
+```bash
+pm run <script> [...args]
+```
+
+## Arguments
+
+**script** `string` *required*
+
+The name of the script to run from package.json
+
+**args** `string[]`
+
+Additional arguments to pass to the script
+
+## Examples
+
+### Run Build Script
+
+```bash
+pm run build
+```
+
+```bash Output
+Running: pnpm run build
+```
+
+### Run Test Script
+
+```bash
+pm run test
+```
+
+```bash Output
+Running: pnpm run test
+```
+
+### Run Script with Arguments
+
+```bash
+pm run test -- --watch
+```
+
+```bash Output
+Running: pnpm run test -- --watch
+```
+
+### Run Custom Script
+
+```bash
+pm run dev
+```
+
+```bash Output
+Running: pnpm run dev
+```
+
+## Package.json Scripts
+
+Define scripts in your `package.json`:
+
+```json package.json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest",
+    "lint": "eslint ."
+  }
+}
+```
+
+Then run them with:
+
+```bash
+pm run dev
+pm run build
+pm run test
+pm run lint
+```
+
+## How It Works
+
+From `src/commands/run.ts:14`:
+
+```typescript
+const cmd = ShellCommand.make(pm.name, 'run', ...passthrough);
+yield* Console.log(`Running: ${pm.name} run ${passthrough.join(' ')}`);
+yield* runShellCommand(cmd);
+```
+
+The command:
+
+1. Detects your project's package manager
+2. Passes all arguments directly to `<pm> run`
+3. Executes the command with the script and any additional arguments
+
+## Package Manager Compatibility
+
+| Package Manager | Command |
+| - | - |
+| pnpm | `pnpm run <script>` |
+| bun | `bun run <script>` |
+| npm | `npm run <script>` |
+
+:::tip
+All package managers support the `run` command, making this a universal way to execute scripts.
+:::
+
+## Common Scripts
+
+Typical scripts you might run:
+
+* `dev` - Start development server
+* `build` - Build for production
+* `test` - Run tests
+* `lint` - Run linter
+* `format` - Format code
+* `typecheck` - Run TypeScript type checking
+* `preview` - Preview production build
+
+## Related Commands
+
+* [pm x](/commands/x) - Execute packages without installing
+* [pm install](/commands/install) - Install dependencies
+

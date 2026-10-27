@@ -1,0 +1,263 @@
+---
+title: "pm up"
+description: "Update dependencies"
+---
+
+## Overview
+
+The `pm up` (or `pm update`) command updates dependencies in your project. It supports interactive mode and can update to the latest versions.
+
+## Syntax
+
+```bash
+pm up [packages...] [options]
+pm update [packages...] [options]
+```
+
+## Arguments
+
+**packages** `string[]`
+
+Specific packages to update. If omitted, updates all dependencies.
+
+## Options
+
+**-i** `boolean` (default: false)
+
+Interactive mode - prompts for each update
+
+**--latest** `boolean` (default: false)
+
+Update to the latest version (not restricted by semver range)
+
+## Examples
+
+### Update All Dependencies
+
+```bash
+pm up
+```
+
+```bash Output
+Running: pnpm update
+```
+
+### Update Specific Package
+
+```bash
+pm up typescript
+```
+
+```bash Output
+Running: pnpm update typescript
+```
+
+### Update Multiple Packages
+
+```bash
+pm up react react-dom
+```
+
+```bash Output
+Running: pnpm update react react-dom
+```
+
+### Interactive Update
+
+```bash
+pm up -i
+```
+
+```bash Output
+Running: pnpm update -i
+
+? Choose dependencies to update:
+  ◯ typescript 5.0.0 → 5.1.0
+  ◯ react 18.2.0 → 18.3.0
+  ◯ vite 4.3.0 → 4.4.0
+```
+
+:::tip
+Interactive mode (`-i`) is great for reviewing updates before applying them.
+:::
+
+### Update to Latest
+
+```bash
+pm up --latest
+```
+
+```bash Output
+Running: pnpm update --latest
+```
+
+### Combined Flags
+
+```bash
+pm up -i --latest typescript
+```
+
+```bash Output
+Running: pnpm update -i --latest typescript
+```
+
+## How It Works
+
+From `src/commands/up.ts:18-32`:
+
+```typescript
+const updateHandler = (args: {
+  i: boolean;
+  latest: boolean;
+  args: ReadonlyArray<string>;
+}) =>
+  Effect.gen(function* () {
+    const pm = yield* PackageManagerService;
+    const extraArgs: Array<string> = [];
+    if (args.i) extraArgs.push('-i');
+    if (args.latest) extraArgs.push('--latest');
+    extraArgs.push(...Array.from(args.args));
+    const cmd = ShellCommand.make(pm.name, 'update', ...extraArgs);
+    yield* Console.log(`Running: ${pm.name} update ${extraArgs.join(' ')}`);
+    yield* runShellCommand(cmd);
+  }).pipe(Effect.provide(PackageManagerLayer));
+```
+
+The command:
+
+1. Detects your package manager
+2. Builds the update command with flags
+3. Executes the update with all arguments
+
+## Update Strategies
+
+### Semantic Versioning
+
+By default, updates respect semver ranges in `package.json`:
+
+```json package.json
+{
+  "dependencies": {
+    "react": "^18.2.0"  // Updates to 18.x.x
+  }
+}
+```
+
+```bash
+pm up react
+# Updates to latest 18.x.x version
+```
+
+### Latest Version
+
+With `--latest`, ignores semver ranges:
+
+```bash
+pm up --latest react
+# Updates to latest version (e.g., 19.0.0)
+```
+
+### Interactive Selection
+
+With `-i`, choose which updates to apply:
+
+```bash
+pm up -i
+# Shows interactive prompt for each available update
+```
+
+## Package Manager Compatibility
+
+| Package Manager | Command |
+| - | - |
+| pnpm | `pnpm update` |
+| bun | `bun update` |
+| npm | `npm update` |
+
+:::note
+All package managers support `update`, but some features like `-i` may vary by package manager.
+:::
+
+## Common Use Cases
+
+### Regular Maintenance
+
+```bash
+# Update all dependencies within semver ranges
+pm up
+```
+
+### Major Version Updates
+
+```bash
+# Update to latest versions interactively
+pm up -i --latest
+```
+
+### Single Package Update
+
+```bash
+# Update specific package
+pm up typescript
+```
+
+### Review Before Update
+
+```bash
+# Interactive mode to see what will change
+pm up -i
+```
+
+## Best Practices
+
+<Steps>
+
+<Step title="Check Current Versions">
+
+Use `pm ls` to see current versions before updating
+
+```bash
+pm ls
+```
+
+</Step>
+
+<Step title="Update Interactively">
+
+Use `-i` flag to review updates
+
+```bash
+pm up -i
+```
+
+</Step>
+
+<Step title="Test After Updates">
+
+Run tests after updating dependencies
+
+```bash
+pm up && pm run test
+```
+
+</Step>
+
+<Step title="Commit Lock File">
+
+Always commit the updated lock file
+
+```bash
+git add pnpm-lock.yaml
+git commit -m "chore: update dependencies"
+```
+
+</Step>
+
+</Steps>
+
+## Related Commands
+
+* [pm add](/commands/add) - Add new dependencies
+* [pm remove](/commands/remove) - Remove dependencies
+* [pm ls](/commands/ls) - List installed versions
+
