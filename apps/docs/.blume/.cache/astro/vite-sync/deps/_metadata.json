@@ -1,0 +1,134 @@
+{
+	"hash": "bf8ad946",
+	"configHash": "4aa2e6fb",
+	"lockfileHash": "5063759a",
+	"browserHash": "dc68079b",
+	"optimized": {
+		"@astrojs/react/client.js": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@astrojs/react/7.1.1/099768f03525363c887248a173242aac15ac1de3d49ff70d1e1dd3fe04dc87a0/node_modules/@astrojs/react/dist/client.js",
+			"file": "@astrojs_react_client__js.js",
+			"fileHash": "ada18b2e",
+			"needsInterop": false
+		},
+		"astro > aria-query": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/aria-query/5.3.2/48384e8192abb9566d723c02f28037022069bb1dcfa8c08d2ecde4f8bc8fee13/node_modules/aria-query/lib/index.js",
+			"file": "astro_n_aria-query.js",
+			"fileHash": "42b13842",
+			"needsInterop": true
+		},
+		"astro > axobject-query": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/axobject-query/4.1.0/ddefef637a7cab8b11942821f64232f0ad152710ac5796ee751aa2eac2507257/node_modules/axobject-query/lib/index.js",
+			"file": "astro_n_axobject-query.js",
+			"fileHash": "f47d1ef2",
+			"needsInterop": true
+		},
+		"astro > html-escaper": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/html-escaper/3.0.3/a20d7f4333aaf6580dbb5654bec794a5a18c66b7a57a952a631e85e6ce071a3e/node_modules/html-escaper/esm/index.js",
+			"file": "astro_n_html-escaper.js",
+			"fileHash": "ad4834aa",
+			"needsInterop": false
+		},
+		"astro/runtime/client/dev-toolbar/entrypoint.js": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/astro/7.4.2/a8ff2ee0a7862b8a9ab6960f80fd9cd2bd773e1122627d2c267f99357d4ea446/node_modules/astro/dist/runtime/client/dev-toolbar/entrypoint.js",
+			"file": "astro_runtime_client_dev-toolbar_entrypoint__js.js",
+			"fileHash": "f7142986",
+			"needsInterop": false
+		},
+		"blume > @orama/orama": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@orama/orama/3.1.18/89f04b96ff7fe0a7007ae8aeca3a862bef425ae910338853bc4b4a2c45c2c4ee/node_modules/@orama/orama/dist/browser/index.js",
+			"file": "blume_n_@orama_orama.js",
+			"fileHash": "36a244d8",
+			"needsInterop": false
+		},
+		"react-dom": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react-dom/19.3.1/91b4c1c2b6a82db0309101d5b932e50da716354b4da7fd87c56fd537549ab3bb/node_modules/react-dom/index.js",
+			"file": "react-dom.js",
+			"fileHash": "277f0b5e",
+			"needsInterop": true
+		},
+		"react-dom/client": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react-dom/19.3.1/91b4c1c2b6a82db0309101d5b932e50da716354b4da7fd87c56fd537549ab3bb/node_modules/react-dom/client.js",
+			"file": "react-dom_client.js",
+			"fileHash": "46a22fb3",
+			"needsInterop": true
+		},
+		"react": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react/19.3.1/389d2ab16b7e9a891f1811154c26db12b2fd74e8cb0d60e295d30c107a842d5d/node_modules/react/index.js",
+			"file": "react.js",
+			"fileHash": "fc1cba2f",
+			"needsInterop": true
+		},
+		"react/compiler-runtime": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react/19.3.1/389d2ab16b7e9a891f1811154c26db12b2fd74e8cb0d60e295d30c107a842d5d/node_modules/react/compiler-runtime.js",
+			"file": "react_compiler-runtime.js",
+			"fileHash": "1f451e9e",
+			"needsInterop": true
+		},
+		"react/jsx-dev-runtime": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react/19.3.1/389d2ab16b7e9a891f1811154c26db12b2fd74e8cb0d60e295d30c107a842d5d/node_modules/react/jsx-dev-runtime.js",
+			"file": "react_jsx-dev-runtime.js",
+			"fileHash": "0905b29c",
+			"needsInterop": true
+		},
+		"react/jsx-runtime": {
+			"src": "../../../../../../../../../../Library/pnpm/store/v11/links/@/react/19.3.1/389d2ab16b7e9a891f1811154c26db12b2fd74e8cb0d60e295d30c107a842d5d/node_modules/react/jsx-runtime.js",
+			"file": "react_jsx-runtime.js",
+			"fileHash": "c55aea9a",
+			"needsInterop": true
+		}
+	},
+	"chunks": {
+		"astro-BQEfx7yr": {
+			"file": "astro-BQEfx7yr.js",
+			"isDynamicEntry": true
+		},
+		"audit-DEq3m408": {
+			"file": "audit-DEq3m408.js",
+			"isDynamicEntry": true
+		},
+		"client-DgMRt-T1": {
+			"file": "client-DgMRt-T1.js",
+			"isDynamicEntry": false
+		},
+		"highlight-DwbHmVf_": {
+			"file": "highlight-DwbHmVf_.js",
+			"isDynamicEntry": false
+		},
+		"icons-CoOtFjKc": {
+			"file": "icons-CoOtFjKc.js",
+			"isDynamicEntry": false
+		},
+		"react-DuSsLd0b": {
+			"file": "react-DuSsLd0b.js",
+			"isDynamicEntry": false
+		},
+		"react-dom-CGpLLNQw": {
+			"file": "react-dom-CGpLLNQw.js",
+			"isDynamicEntry": false
+		},
+		"rolldown-runtime-C-UrYobY": {
+			"file": "rolldown-runtime-C-UrYobY.js",
+			"isDynamicEntry": false
+		},
+		"settings-Bh1T55uE": {
+			"file": "settings-Bh1T55uE.js",
+			"isDynamicEntry": true
+		},
+		"toolbar-Km6QI4pY": {
+			"file": "toolbar-Km6QI4pY.js",
+			"isDynamicEntry": true
+		},
+		"ui-library-CLQIhpfi": {
+			"file": "ui-library-CLQIhpfi.js",
+			"isDynamicEntry": true
+		},
+		"window-Cqh1bIXy": {
+			"file": "window-Cqh1bIXy.js",
+			"isDynamicEntry": false
+		},
+		"xray-BhhJ-Kzt": {
+			"file": "xray-BhhJ-Kzt.js",
+			"isDynamicEntry": true
+		}
+	}
+}
