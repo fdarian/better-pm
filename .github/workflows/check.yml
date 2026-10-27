@@ -15,3 +15,14 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: pnpm install --frozen-lockfile
       - run: bun check:tsc
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v2
+        with:
+          cache: true
+          install: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm docs:build
