@@ -1,0 +1,261 @@
+---
+title: "pm link"
+description: "Link local packages for development"
+---
+
+## Overview
+
+The `pm link` command creates symbolic links between local packages, allowing you to develop and test packages together without publishing them.
+
+## Syntax
+
+```bash
+pm link [...args]
+```
+
+## Arguments
+
+**args** `string[]`
+
+Arguments passed directly to your package manager's link command
+
+## Examples
+
+### Create Global Link
+
+In the package you want to link:
+
+```bash
+cd ~/projects/my-library
+pm link
+```
+
+```bash Output
+Running: pnpm link
+```
+
+This makes the package available globally for linking.
+
+### Link to Another Project
+
+In the project that needs the package:
+
+```bash
+cd ~/projects/my-app
+pm link my-library
+```
+
+```bash Output
+Running: pnpm link my-library
+```
+
+### Link with Path
+
+Link directly using a file path:
+
+```bash
+pm link ../my-library
+```
+
+```bash Output
+Running: pnpm link ../my-library
+```
+
+## Use Cases
+
+### Local Development
+
+Develop a library and application together:
+
+<Steps>
+
+<Step title="Create Global Link">
+
+In your library project:
+
+```bash
+cd ~/projects/ui-library
+pm link
+```
+
+</Step>
+
+<Step title="Link in Application">
+
+In your application project:
+
+```bash
+cd ~/projects/web-app
+pm link ui-library
+```
+
+</Step>
+
+<Step title="Develop and Test">
+
+Changes in `ui-library` are immediately reflected in `web-app`
+
+</Step>
+
+</Steps>
+
+### Testing Unpublished Changes
+
+Test changes before publishing to npm:
+
+```bash
+# In library
+cd ~/my-package
+pm link
+
+# In test project
+cd ~/test-app
+pm link my-package
+
+# Make changes and test
+# Changes are immediately available
+```
+
+### Monorepo Alternative
+
+While monorepos handle this automatically, `pm link` is useful for:
+
+* Cross-monorepo development
+* Testing packages outside their monorepo
+* Temporary connections between projects
+
+## How It Works
+
+From `src/commands/link.ts:10-17`:
+
+```typescript
+export const linkCmd = cli.Command.make('link', { args: argsArg }, (args) =>
+  Effect.gen(function* () {
+    const pm = yield* PackageManagerService;
+    const passthrough = Array.from(args.args);
+    const cmd = ShellCommand.make(pm.name, 'link', ...passthrough);
+    yield* Console.log(`Running: ${pm.name} link ${passthrough.join(' ')}`);
+    yield* runShellCommand(cmd);
+  }).pipe(Effect.provide(PackageManagerLayer)),
+);
+```
+
+The command:
+
+1. Detects your package manager
+2. Passes all arguments to the native link command
+3. Creates symbolic links in node\_modules
+
+## Package Manager Behavior
+
+<CodeGroup>
+
+```bash pnpm
+# Create global link
+pnpm link --global
+
+# Link to package
+pnpm link --global my-package
+
+# Link with path
+pnpm link ../my-package
+```
+
+```bash bun
+# Create global link
+bun link
+
+# Link to package
+bun link my-package
+```
+
+```bash npm
+# Create global link
+npm link
+
+# Link to package
+npm link my-package
+```
+
+</CodeGroup>
+
+:::note
+pnpm requires `--global` flag for creating global links. Better PM passes this through automatically.
+:::
+
+## Verification
+
+Check if a package is linked:
+
+```bash
+pm ls my-package
+```
+
+```bash Output
+my-app@1.0.0
+└── my-package@1.0.0 -> /Users/you/projects/my-package
+```
+
+The `->` indicates a symbolic link.
+
+## Troubleshooting
+
+### Link Not Working
+
+If changes aren't reflected:
+
+1. **Rebuild the linked package**:
+   ```bash
+   cd ~/my-package
+   pm run build
+   ```
+
+2. **Check if link exists**:
+   ```bash
+   pm ls my-package
+   ```
+
+3. **Re-create the link**:
+   ```bash
+   pm unlink my-package
+   pm link my-package
+   ```
+
+### TypeScript Issues
+
+For TypeScript projects, you may need:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "preserveSymlinks": true
+  }
+}
+```
+
+### Build Watch Mode
+
+For real-time changes, run the linked package in watch mode:
+
+```bash
+cd ~/my-package
+pm run build --watch
+```
+
+## Best Practices
+
+:::warning
+Remember to unlink before publishing or deploying to avoid development-only dependencies.
+:::
+
+* **Document links** - Keep track of which packages are linked
+* **Use watch mode** - Run builds in watch mode for instant updates
+* **Unlink after testing** - Remove links when done to avoid confusion
+* **Consider alternatives** - For monorepos, use workspace features instead
+
+## Related Commands
+
+* [pm unlink](/commands/unlink) - Remove symbolic links
+* [pm ls](/commands/ls) - List dependencies and check links
+* [pm install](/commands/install) - Install dependencies normally
+

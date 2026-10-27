@@ -1,0 +1,842 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions when using Better PM"
+---
+
+This guide covers common issues you might encounter with Better PM and how to resolve them.
+
+## Installation Issues
+
+<Accordion>
+  <AccordionItem title="Command not found: pm">
+
+**Symptoms:**
+
+```bash
+pm i
+# zsh: command not found: pm
+```
+
+**Cause:** Better PM is not installed or not in your PATH.
+
+**Solution:**
+
+<Steps>
+
+<Step title="Install via Homebrew (recommended)">
+
+```bash
+brew install fdarian/tap/better-pm
+```
+
+</Step>
+
+<Step title="Or install via npm">
+
+```bash
+npm install -g better-pm
+```
+
+**Note:** Homebrew is recommended as it installs a native binary with faster shell completions (\~60ms vs 200-500ms).
+
+</Step>
+
+<Step title="Verify installation">
+
+```bash
+which pm
+# Should output: /usr/local/bin/pm (or similar)
+
+pm --version
+# Should output version number
+```
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+  <AccordionItem title="npm global install doesn't work">
+
+**Symptoms:**
+
+```bash
+npm install -g better-pm
+# Completes, but pm command still not found
+```
+
+**Cause:** npm global binaries directory is not in your PATH.
+
+**Solution:**
+
+<Steps>
+
+<Step title="Find npm global bin directory">
+
+```bash
+npm bin -g
+# Example output: /usr/local/lib/node_modules/.bin
+```
+
+</Step>
+
+<Step title="Add to PATH">
+
+Add this to your `~/.zshrc` or `~/.bashrc`:
+
+```bash
+export PATH="$(npm bin -g):$PATH"
+```
+
+</Step>
+
+<Step title="Reload shell">
+
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+</Accordion>
+
+## Package Manager Detection
+
+<Accordion>
+  <AccordionItem title="No lock file found. Could not detect package manager">
+
+**Symptoms:**
+
+```bash
+pm i
+# Error: No lock file found. Could not detect package manager (pnpm, bun, or npm).
+```
+
+**Cause:** Better PM searches upward from your current directory for lockfiles but can't find one. The search stops at your home directory or filesystem root.
+
+**Diagnosis:**
+
+Check if you have a lockfile in your project:
+
+```bash
+ls -la | grep -E "(pnpm-lock.yaml|bun.lock|package-lock.json)"
+```
+
+**Solutions:**
+
+**No lockfile exists**
+
+Generate one by running your package manager's install command:
+
+```bash
+# For pnpm:
+pnpm install
+
+# For bun:
+bun install
+
+# For npm:
+npm install
+```
+
+This creates the lockfile, after which Better PM will work.
+
+**Wrong directory**
+
+Navigate to your project root:
+
+```bash
+# Check where you are:
+pwd
+
+# Navigate to project root:
+cd /path/to/my-project
+
+# Verify lockfile exists:
+ls pnpm-lock.yaml  # or bun.lock, package-lock.json
+```
+
+**Lockfile above home directory**
+
+Better PM's `findUpward` utility stops at your home directory to prevent searching the entire filesystem.
+
+From `src/project/find-upward.ts:20-22`:
+
+```typescript
+if (currentDir === homeDir) {
+  return yield* Effect.fail(new Error(`${filename} not found`));
+}
+```
+
+**Solution:** Move your project under your home directory, or cd into the project before running pm.
+
+  </AccordionItem>
+  <AccordionItem title="Wrong package manager detected">
+
+**Symptoms:**
+
+```bash
+pm i
+# Running pnpm install
+# (but you expected bun install)
+```
+
+**Cause:** Multiple lockfiles exist in your project, and Better PM picks the first one it finds.
+
+**Diagnosis:**
+
+Check for multiple lockfiles:
+
+```bash
+ls -la | grep -E "(pnpm-lock.yaml|bun.lock|package-lock.json)"
+```
+
+**Detection order** (from `src/pm/detect.ts:10-18`):
+
+1. `pnpm-lock.yaml` → pnpm
+2. `bun.lock` → bun
+3. `bun.lockb` → bun
+4. `package-lock.json` → npm
+
+**Solution:**
+
+Remove the unwanted lockfiles:
+
+```bash
+# If you want to use bun, remove pnpm/npm locks:
+rm pnpm-lock.yaml package-lock.json
+
+# Then regenerate:
+bun install
+```
+
+  </AccordionItem>
+</Accordion>
+
+## Workspace Detection
+
+<Accordion>
+  <AccordionItem title="Workspace packages not detected">
+
+**Symptoms:**
+
+```bash
+pm pls
+# (no output, or error)
+
+pm cd @myapp/web
+# Error: Package "@myapp/web" not found
+```
+
+**Cause:** Workspace configuration is missing or malformed.
+
+**Diagnosis:**
+
+**pnpm**
+
+Check for `pnpm-workspace.yaml`:
+
+```bash
+cat pnpm-workspace.yaml
+```
+
+Should contain:
+
+```yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+**Common issues:**
+
+* File doesn't exist: Create it with your package globs
+* Incorrect indentation: YAML is whitespace-sensitive
+* Missing quotes: Use quotes for globs with wildcards
+
+**bun**
+
+Check `package.json` in your root:
+
+```bash
+cat package.json | grep -A 5 workspaces
+```
+
+Should contain:
+
+```json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+Or:
+
+```json
+{
+  "workspaces": {
+    "packages": ["apps/*", "packages/*"]
+  }
+}
+```
+
+**Common issues:**
+
+* Missing `workspaces` field
+* Incorrect glob patterns
+* JSON syntax errors
+
+**npm**
+
+Check `package.json` (same as bun):
+
+```bash
+cat package.json | grep -A 5 workspaces
+```
+
+Should contain:
+
+```json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+**Solution:**
+
+Add or fix workspace configuration, then test:
+
+```bash
+pm pls  # Should now list packages
+```
+
+  </AccordionItem>
+  <AccordionItem title="Some packages missing from pm pls">
+
+**Symptoms:**
+
+```bash
+pm pls
+# Shows packages/ui but not packages/utils
+```
+
+**Cause:** Package doesn't match workspace glob patterns, or lacks a `package.json`.
+
+**Diagnosis:**
+
+<Steps>
+
+<Step title="Check package.json exists">
+
+```bash
+ls packages/utils/package.json
+# Should exist
+```
+
+</Step>
+
+<Step title="Check package has a name field">
+
+```bash
+cat packages/utils/package.json | grep name
+# Should output: "name": "@myapp/utils"
+```
+
+Better PM requires a `name` field (from `src/commands/install.ts:23-24`):
+
+```typescript
+const PackageJson = Schema.Struct({
+  name: Schema.String,
+});
+```
+
+</Step>
+
+<Step title="Verify glob pattern matches">
+
+If using `packages/ui` and `packages/utils`:
+
+```yaml pnpm-workspace.yaml
+packages:
+  - 'packages/*'  # Should match both
+```
+
+Test the glob:
+
+```bash
+ls -d packages/*/
+# Should show both packages/ui/ and packages/utils/
+```
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+</Accordion>
+
+## Shell Integration
+
+<Accordion>
+  <AccordionItem title="pm cd doesn't change directory">
+
+**Symptoms:**
+
+```bash
+pm cd @myapp/web
+# Prints: /path/to/apps/web
+# (but doesn't actually cd there)
+```
+
+**Cause:** Shell integration not activated.
+
+**Solution:**
+
+<Steps>
+
+<Step title="Add activation to shell config">
+
+<CodeGroup>
+
+```bash ~/.zshrc
+eval "$(pm activate zsh)"
+```
+
+```bash ~/.bashrc
+eval "$(pm activate bash)"
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Reload shell">
+
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+</Step>
+
+<Step title="Verify wrapper is loaded">
+
+```bash
+type pm
+# Should output: pm is a shell function
+# NOT: pm is /usr/local/bin/pm
+```
+
+See [Shell Integration guide](/guides/shell-integration) for details.
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+  <AccordionItem title="Tab completion doesn't show packages">
+
+**Symptoms:**
+
+```bash
+pm cd <TAB>
+# No completions appear
+```
+
+**Diagnosis:**
+
+<Steps>
+
+<Step title="Test completions directly">
+
+```bash
+pm cd --completions
+# Should list all workspace package names
+```
+
+If this works, the issue is with shell completion setup.
+
+</Step>
+
+<Step title="Check shell integration">
+
+```bash
+grep "pm activate" ~/.zshrc  # or ~/.bashrc
+# Should find the eval line
+```
+
+</Step>
+
+<Step title="For zsh: check compinit order">
+
+In `~/.zshrc`, ensure `compinit` runs after the activation:
+
+```bash
+# ❌ Wrong order:
+compinit
+eval "$(pm activate zsh)"
+
+# ✅ Correct order:
+eval "$(pm activate zsh)"
+compinit
+```
+
+Or use Oh My Zsh (which calls compinit automatically).
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+  <AccordionItem title="Slow tab completions">
+
+**Symptoms:** Typing `pm cd <TAB>` takes 2-3 seconds to show completions.
+
+**Cause:** Using npm installation instead of Homebrew.
+
+**Explanation:**
+
+From the README:
+
+> Homebrew is recommended — it installs a native binary, so shell completions resolve in \~60ms.
+
+npm installation runs the CLI through Node.js, which is slower (200-500ms startup time).
+
+**Solution:**
+
+Switch to Homebrew installation:
+
+```bash
+npm uninstall -g better-pm
+brew install fdarian/tap/better-pm
+```
+
+Then reload shell and test:
+
+```bash
+source ~/.zshrc
+pm cd <TAB>  # Should be much faster
+```
+
+  </AccordionItem>
+</Accordion>
+
+## Command Execution
+
+<Accordion>
+  <AccordionItem title="pm i installs all packages at root">
+
+**Symptoms:**
+
+```bash
+cd ~/my-monorepo
+pm i
+# Installs everything without warning
+```
+
+**Expected behavior:** Should show a warning and prompt for confirmation.
+
+**Cause:** Using `-y` / `--sure` flag, or running in non-interactive environment.
+
+**Diagnosis:**
+
+Check your command:
+
+```bash
+pm i -y         # Bypasses prompt
+pm i --sure     # Bypasses prompt
+pm i            # Should prompt
+```
+
+Check environment:
+
+```bash
+echo $CLAUDECODE
+# If "1", interactive prompts are disabled
+```
+
+**Solution:**
+
+* To install specific packages: `pm i -F @myapp/web`
+* To install everything intentionally: `pm i -y`
+* For safety, always `cd` into a package before running `pm i`
+
+  </AccordionItem>
+  <AccordionItem title="pm add with pasted command fails">
+
+**Symptoms:**
+
+```bash
+pm add "npm install react"
+# Error: ...
+```
+
+**Common issues:**
+
+**No packages extracted**
+
+```bash
+pm add "npm install"
+# Error: No packages specified in pasted command. To install dependencies, use: pm i
+```
+
+**Cause:** Pasted command has no package names.
+
+**Solution:** Include the package name:
+
+```bash
+pm add "npm install react"
+```
+
+**Unsupported package manager**
+
+```bash
+pm add "yarn add react"
+# (Doesn't parse, tries to install package named "yarn")
+```
+
+**Cause:** yarn is not in the supported list (`PM_NAMES = ['npm', 'pnpm', 'bun']`).
+
+**Solution:** Extract package name manually:
+
+```bash
+pm add react
+```
+
+**Version specifiers**
+
+```bash
+pm add "npm install react@18.2.0"
+# May fail depending on package manager
+```
+
+**Cause:** The `@18.2.0` becomes part of the extracted package name.
+
+**Solution:** Use explicit version:
+
+```bash
+pm add react@18.2.0
+```
+
+  </AccordionItem>
+  <AccordionItem title="Package not found error">
+
+**Symptoms:**
+
+```bash
+pm cd @myapp/web
+# Error: Package "@myapp/web" not found. Available packages: ...
+```
+
+**Cause:** Package name doesn't match any workspace package.
+
+**Diagnosis:**
+
+<Steps>
+
+<Step title="List all packages">
+
+```bash
+pm pls
+```
+
+Check exact package names.
+
+</Step>
+
+<Step title="Check for typos">
+
+Package names are case-sensitive and must match exactly:
+
+```bash
+pm cd @myapp/Web   # ❌ Wrong case
+pm cd @myapp/web   # ✅ Correct
+```
+
+</Step>
+
+<Step title="Check package.json name field">
+
+```bash
+cat apps/web/package.json | grep '"name"'
+# Output: "name": "@myapp/web"
+```
+
+Use the exact name from package.json.
+
+</Step>
+
+</Steps>
+
+  </AccordionItem>
+</Accordion>
+
+## Performance Issues
+
+<Accordion>
+  <AccordionItem title="Slow command execution">
+
+**Symptoms:** Commands take 2-5 seconds to start.
+
+**Diagnosis:**
+
+<Steps>
+
+<Step title="Check installation method">
+
+```bash
+which pm
+# Homebrew: /usr/local/bin/pm (fast)
+# npm: /usr/local/lib/node_modules/.bin/pm (slower)
+```
+
+</Step>
+
+<Step title="Benchmark startup time">
+
+```bash
+time pm --version
+# Homebrew: ~0.06s
+# npm: ~0.2-0.5s
+```
+
+</Step>
+
+</Steps>
+
+**Solution:** Use Homebrew installation for better performance:
+
+```bash
+brew install fdarian/tap/better-pm
+```
+
+  </AccordionItem>
+  <AccordionItem title="Large monorepo operations are slow">
+
+**Symptoms:** `pm pls` or `pm cd` takes several seconds in a monorepo with 100+ packages.
+
+**Cause:** Better PM enumerates all workspace packages by:
+
+1. Reading workspace globs from config
+2. Expanding globs to find all matching directories
+3. Reading each package.json to extract the name
+
+**Mitigation:**
+
+* Use Homebrew installation (native binary is faster)
+* Cache isn't implemented yet, so each command re-scans
+* Consider organizing workspace into fewer, larger packages
+
+**Note:** This is a known limitation for very large monorepos.
+
+  </AccordionItem>
+</Accordion>
+
+## Error Messages
+
+### Common Error Reference
+
+<CodeGroup>
+
+```bash NoPackageManagerDetectedError
+Error: No lock file found. Could not detect package manager (pnpm, bun, or npm).
+```
+
+```bash PackageNotFoundError  
+Error: Package "@myapp/web" not found. Available packages:
+  ├── apps/
+  │   └── api "@myapp/api"
+  └── packages/
+      └── ui "@myapp/ui"
+```
+
+```bash Empty pasted command
+Error: No packages specified in pasted command. To install dependencies, use: pm i
+```
+
+</CodeGroup>
+
+**Source reference:** Error classes are defined in `src/lib/errors.ts`.
+
+## Getting Help
+
+If you encounter an issue not covered here:
+
+<Steps>
+
+<Step title="Check source code">
+
+Better PM is open source. You can inspect the implementation:
+
+* Package manager detection: `src/pm/detect.ts`
+* Install logic: `src/commands/install.ts`
+* Workspace parsing: `src/pm/{pnpm,bun,npm}.ts`
+* Shell integration: `src/commands/activate.ts`
+
+</Step>
+
+<Step title="Enable debug output">
+
+Run with verbose logging (if supported by Effect framework):
+
+```bash
+LOG_LEVEL=debug pm i
+```
+
+</Step>
+
+<Step title="Report an issue">
+
+Open an issue on the GitHub repository with:
+
+* Your package manager and version
+* Better PM version (`pm --version`)
+* Full command and error output
+* Relevant workspace configuration (pnpm-workspace.yaml or package.json)
+
+</Step>
+
+</Steps>
+
+## Prevention Tips
+
+<CardGroup cols={2}>
+  <Card title="Use Homebrew">
+
+Install via Homebrew for best performance and fewer issues:
+
+```bash
+brew install fdarian/tap/better-pm
+```
+
+  </Card>
+  <Card title="Activate Shell Integration">
+
+Add to your shell config for full functionality:
+
+```bash
+eval "$(pm activate zsh)"
+```
+
+  </Card>
+  <Card title="Keep Workspace Config Valid">
+
+Ensure your workspace configuration is correct:
+
+* pnpm: Valid `pnpm-workspace.yaml`
+* bun/npm: Valid `workspaces` in `package.json`
+
+  </Card>
+  <Card title="Use pm pls to Verify">
+
+Regularly check that Better PM detects your packages:
+
+```bash
+pm pls
+```
+
+  </Card>
+</CardGroup>
+

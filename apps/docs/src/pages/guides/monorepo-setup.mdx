@@ -1,0 +1,356 @@
+---
+title: "Monorepo Setup"
+description: "Configure Better PM for optimal monorepo workflows with pnpm, bun, or npm workspaces"
+---
+
+Better PM is designed from the ground up for monorepo environments. It automatically detects your workspace structure and prevents common mistakes like accidentally installing all packages when you meant to install just one.
+
+## How Better PM Detects Monorepos
+
+Better PM uses **lockfile detection** to identify your package manager and workspace root. It searches upward from your current directory to find:
+
+* `pnpm-lock.yaml` for pnpm workspaces
+* `bun.lock` or `bun.lockb` for bun workspaces
+* `package-lock.json` for npm workspaces
+
+Once the lockfile is found, Better PM determines the monorepo root and checks for workspace configuration.
+
+:::note
+The detection logic is in `src/pm/detect.ts` and uses the `findUpward` utility to traverse the filesystem from your current working directory up to your home directory.
+:::
+
+## Supported Workspace Configurations
+
+**pnpm**
+
+Better PM reads your `pnpm-workspace.yaml` file to discover workspace packages:
+
+```yaml pnpm-workspace.yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+The CLI parses this file line-by-line to extract glob patterns, then enumerates all matching packages.
+
+**bun**
+
+Bun workspaces are configured in `package.json`:
+
+```json package.json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+Or using the object syntax:
+
+```json package.json
+{
+  "workspaces": {
+    "packages": ["apps/*", "packages/*"]
+  }
+}
+```
+
+Both formats are supported and automatically detected.
+
+**npm**
+
+npm workspaces use the same `package.json` format as bun:
+
+```json package.json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+Better PM automatically uses the correct flags (`-w`) for npm workspace operations.
+
+## Context-Aware Installation
+
+Better PM changes behavior based on where you run commands:
+
+<Steps>
+
+<Step title="Inside a workspace package">
+
+When you run `pm i` from within a workspace package directory, Better PM automatically scopes the install to that package only:
+
+```bash
+cd apps/web
+pm i  # Only installs apps/web and its dependencies
+```
+
+**How it works:**
+
+* Searches upward for the nearest `package.json`
+* Compares its directory with the lockfile directory
+* If they differ and the package is within the monorepo, applies a filter
+* For pnpm: uses `-F @myapp/web...` (includes transitive workspace deps)
+* For bun/npm: resolves all workspace dependencies recursively
+
+</Step>
+
+<Step title="At the monorepo root">
+
+Running `pm i` at the root shows a warning and lists all workspace packages:
+
+```bash
+cd ~/my-monorepo
+pm i
+```
+
+Output:
+
+```
+[WARNING] You are at the monorepo root. This will install ALL packages.
+
+Workspace packages:
+├── apps/
+│   └── web "@myapp/web"
+└── packages/
+    ├── core "@myapp/core"
+    └── utils "@myapp/utils"
+
+To install a specific package:
+  pm i -F <package-name>
+
+To install everything:
+  pm i --sure
+```
+
+In non-interactive environments (like CI), use `-y` or `--sure` to bypass the prompt.
+
+</Step>
+
+</Steps>
+
+## Targeted Package Installation
+
+Install specific workspace packages from anywhere in your monorepo:
+
+<CodeGroup>
+
+```bash Single package
+pm i -F @myapp/web
+```
+
+```bash Multiple packages
+pm i -F @myapp/web -F @myapp/api
+```
+
+```bash At root with confirmation
+pm i -y  # or --sure
+```
+
+</CodeGroup>
+
+The `-F` flag (alias for `--filter`) works consistently across all package managers:
+
+* pnpm: maps to `pnpm -F <pkg> install`
+* bun: maps to `bun install --filter <pkg>`
+* npm: maps to `npm install -w <pkg>`
+
+## Workspace Navigation
+
+Quickly navigate between workspace packages using `pm cd`:
+
+```bash
+# Jump to a specific package
+pm cd @myapp/web
+
+# Return to monorepo root
+pm cd
+
+# List all workspace packages
+pm pls
+```
+
+:::note
+The `pm cd` command requires [shell integration](/guides/shell-integration) to work. Without it, `pm cd` only prints the directory path.
+:::
+
+## Example Monorepo Workflow
+
+Here's a complete example of working with a typical monorepo:
+
+<Steps>
+
+<Step title="Navigate to your project">
+
+```bash
+cd ~/code/my-monorepo
+pm pls  # List all packages
+```
+
+Output:
+
+```
+├── apps/
+│   ├── web "@myapp/web"
+│   └── api "@myapp/api"
+└── packages/
+    ├── ui "@myapp/ui"
+    └── shared "@myapp/shared"
+```
+
+</Step>
+
+<Step title="Work on a specific package">
+
+```bash
+pm cd @myapp/web
+pm add react-query
+pm i  # Installs only @myapp/web (scoped automatically)
+```
+
+</Step>
+
+<Step title="Install multiple packages">
+
+```bash
+# From monorepo root or any subdirectory:
+pm i -F @myapp/web -F @myapp/api
+```
+
+</Step>
+
+<Step title="Add dependencies across packages">
+
+```bash
+pm cd @myapp/api
+pm add fastify @myapp/shared  # Works with workspace deps too
+```
+
+</Step>
+
+</Steps>
+
+## Best Practices
+
+<Accordion>
+  <AccordionItem title="Always use pm i from package directories">
+
+When working within a package, let Better PM automatically scope your installs:
+
+**Good:**
+
+```bash
+cd apps/web
+pm i
+```
+
+**Avoid:**
+
+```bash
+cd ~/my-monorepo
+pm i -F @myapp/web  # Works, but more typing
+```
+
+  </AccordionItem>
+  <AccordionItem title="Use -y in CI environments">
+
+Continuous integration should never prompt interactively:
+
+```yaml .github/workflows/ci.yml
+- name: Install dependencies
+  run: pm i -y
+```
+
+The `-y` flag (alias for `--sure`) confirms root-level installs without prompting.
+
+  </AccordionItem>
+  <AccordionItem title="Leverage workspace dependency resolution">
+
+Better PM automatically includes workspace dependencies when installing:
+
+If `@myapp/web` depends on `@myapp/ui`, running `pm i` from `apps/web/` will install both packages.
+
+For pnpm, this uses the `...` suffix: `-F @myapp/web...`
+For bun/npm, dependencies are resolved recursively via `collectWorkspaceDependencies`.
+
+  </AccordionItem>
+  <AccordionItem title="Organize packages by type">
+
+Structure your workspace for clarity:
+
+```
+my-monorepo/
+├── apps/           # Deployable applications
+│   ├── web/
+│   └── api/
+├── packages/       # Shared libraries
+│   ├── ui/
+│   └── utils/
+└── tools/          # Build tools, scripts
+    └── eslint-config/
+```
+
+This makes `pm pls` output more readable and helps with workspace organization.
+
+  </AccordionItem>
+</Accordion>
+
+## Common Issues
+
+:::warning
+**Issue:** "No lock file found. Could not detect package manager."
+
+**Cause:** You're not inside a project with a lockfile, or the lockfile is above your home directory.
+
+**Solution:**
+
+* Ensure you have a `pnpm-lock.yaml`, `bun.lock`, or `package-lock.json` in your project
+* Run `pm` from within your project directory
+* Check that the lockfile isn't in an unexpected location
+:::
+
+:::warning
+**Issue:** Workspace packages not detected
+
+**Cause:** Workspace configuration is missing or malformed.
+
+**Solution:**
+
+* For pnpm: verify `pnpm-workspace.yaml` exists and has valid glob patterns
+* For bun/npm: check that `package.json` has a `workspaces` array
+* Run `pm pls` to see what Better PM detects
+:::
+
+## Advanced Configuration
+
+### Filter Patterns
+
+Better PM passes filter values directly to your package manager, so you can use their native patterns:
+
+```bash
+# pnpm patterns
+pm i -F "@myapp/*"      # All packages in @myapp scope
+pm i -F "./apps/*"      # All packages in apps/ directory
+
+# Multiple patterns
+pm i -F "@myapp/web" -F "@myapp/api"
+```
+
+### Package Manager Detection Order
+
+Lockfiles are checked in this priority:
+
+1. `pnpm-lock.yaml` → pnpm
+2. `bun.lock` → bun
+3. `bun.lockb` → bun
+4. `package-lock.json` → npm
+
+If multiple lockfiles exist (not recommended), the first match wins.
+
+### Workspace Dependency Resolution
+
+For bun and npm, Better PM recursively resolves workspace dependencies by:
+
+1. Reading all workspace package `package.json` files
+2. Building a dependency graph of workspace packages
+3. Including all transitive workspace dependencies in the filter
+
+This ensures that installing one package also installs its workspace dependencies.
+

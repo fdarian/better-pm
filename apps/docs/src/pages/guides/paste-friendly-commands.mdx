@@ -1,0 +1,475 @@
+---
+title: "Paste-Friendly Commands"
+description: "Copy package manager commands from READMEs and paste them directly into pm add"
+---
+
+One of Better PM's most convenient features is **paste-friendly command parsing**. You can copy installation commands from documentation and paste them directly into `pm add`, regardless of which package manager the docs assume you're using.
+
+## The Problem
+
+You're reading a library's README and see:
+
+```bash
+npm install some-package
+```
+
+But your project uses pnpm. You have to mentally translate:
+
+* `npm install` → `pnpm add`
+* Extract the package name
+* Remember to add `-D` if it was `--save-dev`
+
+With Better PM, just paste the whole command:
+
+```bash
+pm add "npm install some-package"
+```
+
+Better PM automatically detects it's a pasted command and does the right thing.
+
+## How It Works
+
+The paste detection logic is in `src/lib/parse-pm-command.ts` and handles the `pm add` command in `src/commands/add.ts`.
+
+<Steps>
+
+<Step title="Detect pasted commands">
+
+When you pass a string to `pm add`, it checks if:
+
+1. The argument contains spaces (indicating a full command)
+2. The first token is a package manager name (`npm`, `pnpm`, or `bun`)
+3. The second token is an install subcommand (`install`, `add`, or `i`)
+
+```typescript From parse-pm-command.ts
+const isPmCommand =
+  tokens.length >= 2 && isPmName(tokens[0]) && isSubcommand(tokens[1]);
+```
+
+</Step>
+
+<Step title="Extract packages and flags">
+
+If it's a pasted command, Better PM:
+
+* Splits the command by whitespace: `"npm install -D foo bar"` → `['npm', 'install', '-D', 'foo', 'bar']`
+* Extracts package names (tokens without `-` prefix): `['foo', 'bar']`
+* Detects dev flag (`-D` or `--save-dev`): `true`
+
+```typescript From parse-pm-command.ts
+const rest = tokens.slice(2);  // Skip 'npm install'
+const packages = rest.filter((t) => !t.startsWith('-'));
+const dev = rest.some((t) => t === '-D' || t === '--save-dev');
+```
+
+</Step>
+
+<Step title="Build the correct command">
+
+Better PM then builds the installation command using **your project's package manager**:
+
+```typescript From add.ts
+const resolved = resolveAddArgs(Array.from(args.packages), args.dev);
+const cmd = pm.buildAddCommand(resolved.packages, resolved.dev);
+```
+
+If your project uses pnpm and you pasted `npm install -D foo`, Better PM runs:
+
+```bash
+pnpm add -D foo
+```
+
+</Step>
+
+</Steps>
+
+## Supported Formats
+
+Better PM recognizes these package manager commands:
+
+<CardGroup cols={2}>
+  <Card title="npm">
+
+```bash
+npm install pkg
+npm install -D pkg
+npm i pkg
+npm i --save-dev pkg
+```
+
+  </Card>
+  <Card title="pnpm">
+
+```bash
+pnpm install pkg
+pnpm add pkg
+pnpm add -D pkg
+pnpm i pkg
+```
+
+  </Card>
+  <Card title="bun">
+
+```bash
+bun install pkg
+bun add pkg  
+bun add -D pkg
+bun i pkg
+```
+
+  </Card>
+</CardGroup>
+
+### Valid Package Manager Names
+
+```typescript From parse-pm-command.ts:1
+const PM_NAMES = ['npm', 'pnpm', 'bun'] as const;
+```
+
+### Valid Subcommands
+
+```typescript From parse-pm-command.ts:2  
+const SUBCOMMANDS = ['install', 'add', 'i'] as const;
+```
+
+## Examples
+
+**Basic Usage**
+
+Copy from README:
+
+```bash
+npm install react
+```
+
+Paste into Better PM:
+
+```bash
+pm add "npm install react"
+```
+
+Better PM runs (assuming your project uses pnpm):
+
+```bash
+pnpm add react
+```
+
+**Dev Dependencies**
+
+Copy from README:
+
+```bash
+npm install --save-dev typescript
+```
+
+Paste into Better PM:
+
+```bash
+pm add "npm install --save-dev typescript"
+```
+
+Better PM runs:
+
+```bash
+pnpm add -D typescript
+# (normalizes --save-dev to -D)
+```
+
+**Multiple Packages**
+
+Copy from README:
+
+```bash
+bun add zod @tanstack/react-query
+```
+
+Paste into Better PM:
+
+```bash
+pm add "bun add zod @tanstack/react-query"
+```
+
+Better PM runs (assuming npm project):
+
+```bash
+npm install zod @tanstack/react-query
+```
+
+**Scoped Packages**
+
+Copy from README:
+
+```bash
+pnpm install -D @types/node @types/react
+```
+
+Paste into Better PM:
+
+```bash
+pm add "pnpm install -D @types/node @types/react"
+```
+
+Properly handles scoped packages (names starting with `@`).
+
+## Real-World Workflows
+
+### Copying from GitHub READMEs
+
+<Steps>
+
+<Step title="Find the installation section">
+
+Navigate to a library's README on GitHub:
+
+````markdown From a typical README
+## Installation
+
+```bash
+npm install framer-motion
+```
+````
+
+</Step>
+
+<Step title="Copy the command">
+
+Select and copy the entire command:
+
+```
+npm install framer-motion
+```
+
+</Step>
+
+<Step title="Paste into pm add">
+
+In your terminal:
+
+```bash
+pm add "npm install framer-motion"
+```
+
+Output:
+
+```
+Running: pnpm add framer-motion
+```
+
+</Step>
+
+</Steps>
+
+### Copying from Documentation Sites
+
+Many docs show multiple package manager options:
+
+````markdown Example from docs
+## Installation
+
+npm:
+```bash
+npm install next
+```
+
+pnpm:
+```bash
+pnpm add next
+```
+````
+
+**With Better PM:** Doesn't matter which one you copy. Both will work:
+
+```bash
+pm add "npm install next"  # ✅ Works
+pm add "pnpm add next"     # ✅ Also works
+```
+
+### Copying from Stack Overflow
+
+Stack Overflow answers often include full commands:
+
+> To fix this, install the missing peer dependency:
+>
+> ```bash
+> npm install --save-dev @babel/core
+> ```
+
+Just paste it:
+
+```bash
+pm add "npm install --save-dev @babel/core"
+```
+
+## Edge Cases
+
+### Empty Package List
+
+If you paste a command without package names:
+
+```bash
+pm add "npm install"
+```
+
+Better PM throws an error:
+
+```typescript From parse-pm-command.ts:40-43
+if (extracted.packages.length === 0) {
+  throw new Error(
+    'No packages specified in pasted command. To install dependencies, use: pm i',
+  );
+}
+```
+
+This prevents accidentally running `pm add` without packages, which would fail.
+
+### Mixed Flags
+
+If the pasted command has both `-D` from the paste AND you pass `-D` explicitly:
+
+```bash
+pm add -D "npm install -D typescript"
+```
+
+Both flags are recognized:
+
+```typescript From parse-pm-command.ts:46
+return { packages: extracted.packages, dev: devFlag || extracted.dev };
+```
+
+Result: `dev = true || true = true` (no duplication, just ensures dev mode).
+
+### Non-Pasted Commands
+
+If you pass arguments without spaces (normal usage), Better PM skips parsing:
+
+```bash
+pm add typescript  # No parsing, direct pass-through
+```
+
+```typescript From parse-pm-command.ts:26-32
+const tokens =
+  rawPackages.length === 1 && rawPackages[0].includes(' ')
+    ? rawPackages[0].split(/\s+/)
+    : rawPackages;
+
+const isPmCommand =
+  tokens.length >= 2 && isPmName(tokens[0]) && isSubcommand(tokens[1]);
+
+if (!isPmCommand) {
+  return { packages: rawPackages, dev: devFlag };
+}
+```
+
+## Limitations
+
+:::warning
+**Not supported:**
+
+* **yarn commands:** `yarn add pkg` is not detected (yarn not in `PM_NAMES`)
+* **npm shorthands with flags:** `npm i -g pkg` (global installs not supported by Better PM)
+* **Complex flags:** `--legacy-peer-deps`, `--force`, etc. are ignored
+* **Version specifiers in paste:** `npm install pkg@1.2.3` (the `@1.2.3` becomes part of package name, which may fail)
+
+For these cases, extract the package name manually:
+
+```bash
+pm add pkg        # Instead of pasting the full command
+pm add pkg@1.2.3  # Explicit version works fine
+```
+:::
+
+## Why This Feature Exists
+
+From the README:
+
+> Copied a command from a README? Just paste it:
+>
+> ```bash
+> pm add "npm install -D something"    # automatically extracts -D and the package
+> pm add "pnpm add foo bar"            # works with any package manager command  
+> pm add "bun add -D @scope/pkg"       # scoped packages too
+> ```
+>
+> `pm` detects pasted `npm install`, `pnpm add`, `bun add` (and their shorthands like `npm i`) and extracts the packages and `-D` flag automatically.
+
+This feature eliminates the mental overhead of translating between package managers when reading documentation, making Better PM truly **package manager agnostic** from the developer's perspective.
+
+## Source Code Deep Dive
+
+The implementation is remarkably concise:
+
+```typescript src/lib/parse-pm-command.ts (complete file)
+const PM_NAMES = ['npm', 'pnpm', 'bun'] as const;
+const SUBCOMMANDS = ['install', 'add', 'i'] as const;
+
+function isPmName(token: string): boolean {
+  return (PM_NAMES as ReadonlyArray<string>).includes(token);
+}
+
+function isSubcommand(token: string): boolean {
+  return (SUBCOMMANDS as ReadonlyArray<string>).includes(token);
+}
+
+function extractFromTokens(tokens: Array<string>): {
+  packages: Array<string>;
+  dev: boolean;
+} {
+  const rest = tokens.slice(2);
+  const packages = rest.filter((t) => !t.startsWith('-'));
+  const dev = rest.some((t) => t === '-D' || t === '--save-dev');
+  return { packages, dev };
+}
+
+export function resolveAddArgs(
+  rawPackages: Array<string>,
+  devFlag: boolean,
+): { packages: Array<string>; dev: boolean } {
+  const tokens =
+    rawPackages.length === 1 && rawPackages[0].includes(' ')
+      ? rawPackages[0].split(/\s+/)
+      : rawPackages;
+
+  const isPmCommand =
+    tokens.length >= 2 && isPmName(tokens[0]) && isSubcommand(tokens[1]);
+
+  if (!isPmCommand) {
+    return { packages: rawPackages, dev: devFlag };
+  }
+
+  const extracted = extractFromTokens(tokens);
+
+  if (extracted.packages.length === 0) {
+    throw new Error(
+      'No packages specified in pasted command. To install dependencies, use: pm i',
+    );
+  }
+
+  return { packages: extracted.packages, dev: devFlag || extracted.dev };
+}
+```
+
+**Key insights:**
+
+* **Simple string splitting:** Uses `split(/\s+/)` to tokenize
+* **Negative filter:** Packages are tokens that don't start with `-`
+* **Boolean flags:** Checks for `-D` or `--save-dev` explicitly
+* **Fall-through:** If not a pasted command, returns args unchanged
+
+## Testing
+
+You can test the parsing logic directly:
+
+```bash
+# These should all work:
+pm add "npm install react"
+pm add "pnpm add -D typescript" 
+pm add "bun i zod @tanstack/react-query"
+
+# These bypass parsing (normal usage):
+pm add react
+pm add -D typescript
+pm add zod @tanstack/react-query
+```
+
+Check the output to see which command Better PM actually runs.
+

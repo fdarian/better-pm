@@ -1,0 +1,189 @@
+---
+title: "pm ls"
+description: "List installed dependencies"
+---
+
+## Overview
+
+The `pm ls` command lists installed dependencies in your project. It's a passthrough to your package manager's native `ls` command, with automatic handling of package manager differences.
+
+## Syntax
+
+```bash
+pm ls [...args]
+```
+
+## Arguments
+
+**args** `string[]`
+
+Additional arguments to pass to the underlying package manager's ls command
+
+## Examples
+
+### List All Dependencies
+
+```bash
+pm ls
+```
+
+```bash Output (pnpm)
+Running: pnpm ls
+
+my-app@1.0.0 /path/to/project
+├─┬ express 4.18.2
+│ ├── accepts 1.3.8
+│ ├── array-flatten 1.1.1
+│ └── body-parser 1.20.1
+└── typescript 5.0.0
+```
+
+### List Specific Package
+
+```bash
+pm ls express
+```
+
+```bash Output
+Running: pnpm ls express
+
+my-app@1.0.0 /path/to/project
+└── express 4.18.2
+```
+
+### List with Depth
+
+```bash
+pm ls --depth=0
+```
+
+```bash Output
+Running: pnpm ls --depth=0
+
+my-app@1.0.0 /path/to/project
+├── express 4.18.2
+├── react 18.2.0
+└── typescript 5.0.0
+```
+
+### List Dev Dependencies
+
+```bash
+pm ls --dev
+```
+
+```bash Output
+Running: pnpm ls --dev
+```
+
+### List Production Dependencies
+
+```bash
+pm ls --prod
+```
+
+```bash Output
+Running: pnpm ls --prod
+```
+
+## Package Manager Differences
+
+Better PM handles differences between package managers automatically:
+
+<CodeGroup>
+
+```bash pnpm
+pm ls
+# Runs: pnpm ls
+```
+
+```bash bun
+pm ls
+# Runs: bun pm ls
+```
+
+```bash npm
+pm ls
+# Runs: npm ls
+```
+
+</CodeGroup>
+
+From `src/commands/ls.ts:14-17`:
+
+```typescript
+const cmd =
+  pm.name === 'bun'
+    ? ShellCommand.make('bun', 'pm', 'ls', ...passthrough)
+    : ShellCommand.make(pm.name, 'ls', ...passthrough);
+```
+
+:::note
+Bun requires `bun pm ls` instead of just `bun ls`, which Better PM handles automatically.
+:::
+
+## Common Use Cases
+
+### Check Dependency Version
+
+```bash
+pm ls typescript
+```
+
+### Verify Installation
+
+```bash
+pm ls react react-dom
+```
+
+### List Top-Level Dependencies
+
+```bash
+pm ls --depth=0
+```
+
+### Find Dependency Issues
+
+```bash
+pm ls --long
+```
+
+### List Global Packages
+
+```bash
+pm ls --global
+```
+
+## Output Format
+
+The output shows:
+
+* **Package name and version** at the root level
+* **Dependency tree** with proper nesting
+* **Versions** for each installed package
+* **Missing or invalid** dependencies (marked with WARN or ERR)
+
+## Supported Arguments
+
+Common arguments that work across package managers:
+
+| Argument | Description |
+| - | - |
+| `--depth=<n>` | Limit dependency tree depth |
+| `--dev` | List only dev dependencies |
+| `--prod` | List only production dependencies |
+| `--global` | List globally installed packages |
+| `--json` | Output as JSON |
+| `--long` | Show extended information |
+| `--parseable` | Output parseable format |
+
+:::tip
+Use `--json` for programmatic parsing of dependency information.
+:::
+
+## Related Commands
+
+* [pm pls](/commands/pls) - List workspace packages (monorepo)
+* [pm why](/commands/why) - Explain why a package is installed
+* [pm install](/commands/install) - Install dependencies
+

@@ -1,0 +1,356 @@
+---
+title: "Package Manager Agnostic"
+description: "How Better PM detects and abstracts package managers for a unified experience"
+---
+
+Better PM works seamlessly with **pnpm**, **bun**, and **npm** without requiring you to remember which package manager your project uses. It automatically detects the package manager and translates commands accordingly.
+
+## Automatic Detection
+
+Better PM detects the package manager by searching for lock files in your project:
+
+```typescript
+// From src/pm/detect.ts:10-18
+const LOCK_FILES: Array<{
+  file: string;
+  implementation: Omit<(typeof PackageManagerService)['Service'], 'lockDir'>;
+}> = [
+  { file: 'pnpm-lock.yaml', implementation: pnpmPackageManager },
+  { file: 'bun.lock', implementation: bunPackageManager },
+  { file: 'bun.lockb', implementation: bunPackageManager },
+  { file: 'package-lock.json', implementation: npmPackageManager },
+];
+```
+
+### Detection Process
+
+<Steps>
+
+<Step title="Search upward for lock files">
+
+Better PM searches from your current directory upward to the home directory or filesystem root using the `findUpward` utility.
+
+```typescript
+// From src/pm/detect.ts:20-30
+export const detectPackageManager = Effect.gen(function* () {
+  const path = yield* Path.Path;
+  
+  for (const lockFile of LOCK_FILES) {
+    const result = yield* findUpward(lockFile.file).pipe(Effect.option);
+    if (result._tag === 'Some') {
+      const lockDir = path.dirname(result.value);
+      return { ...lockFile.implementation, lockDir };
+    }
+  }
+  return yield* Effect.fail(new NoPackageManagerDetectedError());
+});
+```
+
+</Step>
+
+<Step title="Select the first match">
+
+The first lock file found determines the package manager. Lock files are checked in priority order: pnpm → bun → npm.
+
+</Step>
+
+<Step title="Store the lock directory">
+
+The directory containing the lock file becomes the `lockDir`, which Better PM uses as the monorepo root for all operations.
+
+:::note
+The `findUpward` function stops at the home directory to prevent searching the entire filesystem, ensuring fast detection even in nested directories.
+:::
+
+</Step>
+
+</Steps>
+
+## Workspace Detection
+
+Each package manager has a different way of defining workspaces:
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:7-12
+detectHasWorkspaces: (lockDir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    return yield* fs.exists(path.join(lockDir, 'pnpm-workspace.yaml'));
+  }),
+```
+
+```typescript bun
+// From src/pm/bun.ts:23-35
+detectHasWorkspaces: (lockDir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const pkgPath = path.join(lockDir, 'package.json');
+    const exists = yield* fs.exists(pkgPath);
+    if (!exists) return false;
+    const content = yield* fs.readFileString(pkgPath);
+    const pkg = yield* Schema.decode(
+      Schema.parseJson(PackageJsonWithWorkspaces),
+    )(content);
+    return pkg.workspaces !== undefined && pkg.workspaces.length > 0;
+  }),
+```
+
+```typescript npm
+// From src/pm/npm.ts:14-26
+detectHasWorkspaces: (lockDir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const pkgPath = path.join(lockDir, 'package.json');
+    const exists = yield* fs.exists(pkgPath);
+    if (!exists) return false;
+    const content = yield* fs.readFileString(pkgPath);
+    const pkg = yield* Schema.decode(
+      Schema.parseJson(PackageJsonWithWorkspaces),
+    )(content);
+    return pkg.workspaces !== undefined && pkg.workspaces.length > 0;
+  }),
+```
+
+</CodeGroup>
+
+* **pnpm** uses a dedicated `pnpm-workspace.yaml` file
+* **bun** and **npm** use the `workspaces` field in `package.json`
+
+## Command Mapping
+
+Better PM translates unified commands into package manager-specific syntax:
+
+### Install Commands
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:29-36
+buildInstallCommand: () => ShellCommand.make('pnpm', 'install'),
+buildFilteredInstallCommand: (filters: Array<string>) => {
+  const args: Array<string> = [];
+  for (const f of filters) {
+    args.push('-F', f);
+  }
+  args.push('install');
+  return ShellCommand.make('pnpm', ...args);
+},
+```
+
+```typescript bun
+// From src/pm/bun.ts:49-55
+buildInstallCommand: () => ShellCommand.make('bun', 'install'),
+buildFilteredInstallCommand: (filters: Array<string>) => {
+  const args: Array<string> = ['install'];
+  for (const f of filters) {
+    args.push('--filter', f);
+  }
+  return ShellCommand.make('bun', ...args);
+},
+```
+
+```typescript npm
+// From src/pm/npm.ts:40-46
+buildInstallCommand: () => ShellCommand.make('npm', 'install'),
+buildFilteredInstallCommand: (filters: Array<string>) => {
+  const args: Array<string> = ['install'];
+  for (const f of filters) {
+    args.push('-w', f);
+  }
+  return ShellCommand.make('npm', ...args);
+},
+```
+
+</CodeGroup>
+
+**Filter flag mapping:**
+
+* pnpm: `-F <package>`
+* bun: `--filter <package>`
+* npm: `-w <package>`
+
+### Add Commands
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:38-42
+buildAddCommand: (packages: Array<string>, dev: boolean) => {
+  const args: Array<string> = ['add'];
+  if (dev) args.push('-D');
+  args.push(...packages);
+  return ShellCommand.make('pnpm', ...args);
+},
+```
+
+```typescript bun
+// From src/pm/bun.ts:57-61
+buildAddCommand: (packages: Array<string>, dev: boolean) => {
+  const args: Array<string> = ['add'];
+  if (dev) args.push('-D');
+  args.push(...packages);
+  return ShellCommand.make('bun', ...args);
+},
+```
+
+```typescript npm
+// From src/pm/npm.ts:48-52
+buildAddCommand: (packages: Array<string>, dev: boolean) => {
+  const args: Array<string> = ['install'];
+  if (dev) args.push('-D');
+  args.push(...packages);
+  return ShellCommand.make('npm', ...args);
+},
+```
+
+</CodeGroup>
+
+**Add command mapping:**
+
+* pnpm: `pnpm add`
+* bun: `bun add`
+* npm: `npm install`
+
+### Remove Commands
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:44-45
+buildRemoveCommand: (packages: Array<string>) =>
+  ShellCommand.make('pnpm', 'remove', ...packages),
+```
+
+```typescript bun
+// From src/pm/bun.ts:63-64
+buildRemoveCommand: (packages: Array<string>) =>
+  ShellCommand.make('bun', 'remove', ...packages),
+```
+
+```typescript npm
+// From src/pm/npm.ts:54-55
+buildRemoveCommand: (packages: Array<string>) =>
+  ShellCommand.make('npm', 'uninstall', ...packages),
+```
+
+</CodeGroup>
+
+**Remove command mapping:**
+
+* pnpm: `pnpm remove`
+* bun: `bun remove`
+* npm: `npm uninstall`
+
+## Package Manager Service Interface
+
+All package managers implement the `PackageManagerService` interface, ensuring consistent behavior:
+
+```typescript
+// From src/pm/package-manager-service.ts:10-49
+export class PackageManagerService extends Context.Tag('PackageManagerService')<
+  PackageManagerService,
+  {
+    readonly lockDir: string;
+    readonly name: string;
+    readonly detectHasWorkspaces: (lockDir: string) => Effect.Effect<boolean>;
+    readonly listWorkspacePackages: (lockDir: string) => 
+      Effect.Effect<Array<{ name: string; relDir: string }>>;
+    readonly buildInstallCommand: () => ShellCommand.Command;
+    readonly buildFilteredInstallCommand: (filters: Array<string>) => 
+      ShellCommand.Command;
+    readonly buildAddCommand: (packages: Array<string>, dev: boolean) => 
+      ShellCommand.Command;
+    readonly buildRemoveCommand: (packages: Array<string>) => 
+      ShellCommand.Command;
+    readonly resolveInstallFilters: (lockDir: string, packageName: string) => 
+      Effect.Effect<Array<string>>;
+  }
+>() {}
+```
+
+## Workspace Package Enumeration
+
+Better PM lists workspace packages by reading workspace configuration and enumerating directories:
+
+<CodeGroup>
+
+```typescript pnpm
+// From src/pm/pnpm.ts:13-27
+listWorkspacePackages: (lockDir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const content = yield* fs.readFileString(
+      path.join(lockDir, 'pnpm-workspace.yaml'),
+    );
+    const globs: Array<string> = [];
+    for (const line of content.split('\n')) {
+      const match = line.match(/^\s*-\s+(.+)$/);
+      if (match) {
+        globs.push(match[1].trim());
+      }
+    }
+    return yield* enumerateWorkspacePackages(lockDir, globs);
+  }),
+```
+
+```typescript bun
+// From src/pm/bun.ts:36-47
+listWorkspacePackages: (lockDir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const content = yield* fs.readFileString(
+      path.join(lockDir, 'package.json'),
+    );
+    const pkg = yield* Schema.decode(
+      Schema.parseJson(PackageJsonWithWorkspaces),
+    )(content);
+    const globs = pkg.workspaces ?? [];
+    return yield* enumerateWorkspacePackages(lockDir, globs);
+  }),
+```
+
+</CodeGroup>
+
+The `enumerateWorkspacePackages` function handles glob patterns like `packages/*` and `apps/*`, reading the `package.json` name from each discovered directory (see `src/pm/package-manager-service.ts:64-115`).
+
+## Benefits of Abstraction
+
+<CardGroup cols={2}>
+  <Card title="One Command to Learn">
+
+Use `pm i`, `pm add`, `pm remove` regardless of the package manager. No need to remember if your project uses pnpm, bun, or npm.
+
+  </Card>
+  <Card title="Project Portability">
+
+Switch package managers by changing the lock file. Better PM adapts automatically without requiring workflow changes.
+
+  </Card>
+  <Card title="Team Consistency">
+
+Everyone on the team uses the same commands, even if they work across multiple projects with different package managers.
+
+  </Card>
+  <Card title="Simplified CI/CD">
+
+Write CI scripts once using `pm` commands that work across all your repositories, regardless of package manager.
+
+  </Card>
+</CardGroup>
+
+:::tip
+Better PM logs the actual command being executed, so you can see exactly what package manager command is running:
+
+```bash
+pm i
+# Running pnpm install filtered to @myapp/web... (cmd: pnpm -F '@myapp/web...' install)
+```
+:::
+

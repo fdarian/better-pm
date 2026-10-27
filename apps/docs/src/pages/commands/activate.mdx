@@ -1,0 +1,346 @@
+---
+title: "pm activate"
+description: "Set up shell integration and completions"
+---
+
+## Overview
+
+The `pm activate` command generates shell integration code that enables advanced features like actual directory changes with `pm cd` and intelligent tab completions for workspace packages.
+
+## Syntax
+
+```bash
+pm activate <shell>
+```
+
+## Arguments
+
+**shell** `string` *required*
+
+Your shell type: `zsh` or `bash`
+
+## Installation
+
+Add to your shell configuration file:
+
+<CodeGroup>
+
+```bash zsh (~/.zshrc)
+# Add this line to ~/.zshrc
+eval "$(pm activate zsh)"
+```
+
+```bash bash (~/.bashrc)
+# Add this line to ~/.bashrc
+eval "$(pm activate bash)"
+```
+
+</CodeGroup>
+
+Then reload your shell:
+
+```bash
+# For zsh
+source ~/.zshrc
+
+# For bash
+source ~/.bashrc
+```
+
+:::tip
+After activation, restart your terminal or source your config file to enable the features.
+:::
+
+## What It Enables
+
+### 1. Actual Directory Changes
+
+Without activation, `pm cd` only prints the path:
+
+```bash
+# Without activation
+pm cd @myapp/web
+/path/to/monorepo/apps/web
+# (you're still in the same directory)
+```
+
+With activation, it actually changes directories:
+
+```bash
+# With activation
+pm cd @myapp/web
+# (now in /path/to/monorepo/apps/web)
+```
+
+### 2. Tab Completions
+
+Complete package names with Tab:
+
+```bash
+pm cd <TAB>
+# Shows all workspace packages
+@myapp/api    @myapp/core    @myapp/web    @myapp/utils
+
+pm cd @myapp/<TAB>
+# Completes package names
+```
+
+### 3. Command Completions
+
+Complete all `pm` commands and flags:
+
+```bash
+pm <TAB>
+add       cd        i         install   link      ls
+pls       remove    run       unlink    up        why       x
+
+pm add -<TAB>
+-D    # (shows dev dependency flag)
+```
+
+## How It Works
+
+### Shell Wrapper Function
+
+The activation creates a wrapper function that intercepts `pm cd` commands:
+
+From `src/commands/activate.ts:6-22`:
+
+```bash
+pm() {
+  if [ "$1" = "cd" ]; then
+    shift;
+    # Check if any flags are present
+    for arg in "$@"; do
+      case "$arg" in
+        -*) command pm cd "$@"; return;;
+      esac;
+    done;
+    # Get the directory path
+    local dir;
+    dir=$(command pm cd "$@");
+    # If successful and path exists, cd to it
+    if [ $? -eq 0 ] && [ -d "$dir" ]; then
+      builtin cd "$dir";
+    fi;
+  else
+    command pm "$@";
+  fi;
+};
+```
+
+This wrapper:
+
+1. Intercepts `pm cd` calls
+2. Handles flags by passing through to the command
+3. Gets the directory path from `pm cd`
+4. Uses shell's builtin `cd` to actually change directory
+5. Passes all other commands through normally
+
+### Completion Functions
+
+For zsh, from `src/commands/activate.ts:24-34`:
+
+```bash
+eval "$(command pm --completions zsh)";
+if (( $+functions[_pm_zsh_completions] )); then
+  functions[_pm_zsh_completions_base]=$functions[_pm_zsh_completions];
+  _pm_zsh_completions() {
+    if [[ $words[2] == cd ]] && (( CURRENT == 3 )); then
+      compadd -- ${(f)"$(command pm cd --completions 2>/dev/null)"};
+    else
+      _pm_zsh_completions_base "$@";
+    fi;
+  };
+fi;
+```
+
+This:
+
+1. Loads base completions from `pm --completions zsh`
+2. Wraps the completion function
+3. For `pm cd <TAB>`, gets package names from `pm cd --completions`
+4. For other commands, uses base completions
+
+## Testing Activation
+
+### Verify Installation
+
+Check if the function exists:
+
+```bash
+type pm
+```
+
+```bash Output (activated)
+pm is a shell function from /Users/you/.zshrc
+```
+
+```bash Output (not activated)
+pm is /usr/local/bin/pm
+```
+
+### Test Directory Change
+
+```bash
+pwd
+# /path/to/monorepo
+
+pm cd @myapp/web
+
+pwd
+# /path/to/monorepo/apps/web
+```
+
+### Test Completions
+
+```bash
+pm cd <TAB>
+# Should show package names
+```
+
+## Manual Setup
+
+If you prefer not to use `eval`, save the output:
+
+```bash
+pm activate zsh > ~/.pm-integration.zsh
+```
+
+Then source it in `~/.zshrc`:
+
+```bash
+source ~/.pm-integration.zsh
+```
+
+## Troubleshooting
+
+### Completions Not Working
+
+1. **Reload shell**:
+   ```bash
+   source ~/.zshrc  # or ~/.bashrc
+   ```
+
+2. **Check function is loaded**:
+   ```bash
+   type pm
+   ```
+
+3. **Verify activation line**:
+   ```bash
+   grep "pm activate" ~/.zshrc
+   ```
+
+### Directory Changes Not Working
+
+1. **Verify shell integration**:
+   ```bash
+   type pm
+   # Should show "pm is a shell function"
+   ```
+
+2. **Test without cd**:
+   ```bash
+   pm --version
+   # Should still work
+   ```
+
+3. **Check package exists**:
+   ```bash
+   pm pls
+   # Verify package name is correct
+   ```
+
+### Conflicts with Existing Function
+
+If you have another `pm` function:
+
+```bash
+# Rename the wrapper
+eval "$(pm activate zsh | sed 's/^pm()/better_pm()/')"
+
+# Then use:
+better_pm cd @myapp/web
+```
+
+## Shell Support
+
+| Shell | Supported | Completions | cd Integration |
+| - | - | - | - |
+| zsh | ✅ Yes | ✅ Yes | ✅ Yes |
+| bash | ✅ Yes | ✅ Yes | ✅ Yes |
+| fish | ⚠️ Partial | ❌ No | ❌ No |
+| other | ⚠️ Basic | ❌ No | ❌ No |
+
+:::note
+For fish and other shells, basic command completions may work but cd integration is not supported.
+:::
+
+## What Gets Activated
+
+<Steps>
+
+<Step title="Shell Wrapper">
+
+Function that intercepts `pm cd` and uses builtin `cd`
+
+</Step>
+
+<Step title="Base Completions">
+
+Tab completion for all `pm` commands and flags
+
+</Step>
+
+<Step title="Package Completions">
+
+Tab completion for workspace package names in `pm cd`
+
+</Step>
+
+<Step title="Smart Filtering">
+
+Completions filter based on what you've typed
+
+</Step>
+
+</Steps>
+
+## Advanced Usage
+
+### Lazy Loading
+
+For faster shell startup, lazy load activation:
+
+```bash ~/.zshrc
+# Only load when pm is used
+pm() {
+  unfunction pm
+  eval "$(command pm activate zsh)"
+  pm "$@"
+}
+```
+
+### Custom Wrapper
+
+Extend the wrapper with your own logic:
+
+```bash ~/.zshrc
+eval "$(pm activate zsh)"
+
+# Save the original function
+functions[_pm_original]=$functions[pm]
+
+# Override with custom logic
+pm() {
+  echo "Running pm $@"
+  _pm_original "$@"
+}
+```
+
+## Related Commands
+
+* [pm cd](/commands/cd) - Navigate to workspace packages
+* [pm pls](/commands/pls) - List workspace packages for completion
+

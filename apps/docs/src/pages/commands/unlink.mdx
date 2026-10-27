@@ -1,0 +1,315 @@
+---
+title: "pm unlink"
+description: "Remove symbolic links between packages"
+---
+
+## Overview
+
+The `pm unlink` command removes symbolic links created by `pm link`, restoring packages to their published versions from the registry.
+
+## Syntax
+
+```bash
+pm unlink [...args]
+```
+
+## Arguments
+
+**args** `string[]`
+
+Package names or arguments passed to your package manager's unlink command
+
+## Examples
+
+### Unlink Specific Package
+
+```bash
+pm unlink my-library
+```
+
+```bash Output
+Running: pnpm unlink my-library
+```
+
+This removes the symbolic link and restores the package from the registry.
+
+### Unlink All Packages
+
+In the project with linked packages:
+
+```bash
+pm unlink
+```
+
+```bash Output
+Running: pnpm unlink
+```
+
+### Remove Global Link
+
+In the package that was globally linked:
+
+```bash
+cd ~/projects/my-library
+pm unlink
+```
+
+```bash Output
+Running: pnpm unlink
+```
+
+## Use Cases
+
+### After Local Development
+
+When you're done developing locally:
+
+<Steps>
+
+<Step title="Unlink Package">
+
+Remove the symbolic link:
+
+```bash
+cd ~/projects/my-app
+pm unlink my-library
+```
+
+</Step>
+
+<Step title="Reinstall from Registry">
+
+Install the published version:
+
+```bash
+pm install
+```
+
+</Step>
+
+<Step title="Verify">
+
+Check the package is from registry:
+
+```bash
+pm ls my-library
+```
+
+</Step>
+
+</Steps>
+
+### Before Deployment
+
+Ensure no development links exist:
+
+```bash
+# Check for linked packages
+pm ls
+
+# Unlink any found
+pm unlink my-dev-package
+
+# Clean install
+pm install
+```
+
+:::warning
+Always unlink packages before deploying to production to avoid missing dependencies.
+:::
+
+### Switching Development Setup
+
+Switch from linked to published version:
+
+```bash
+# Unlink local version
+pm unlink ui-library
+
+# Install published version
+pm add ui-library
+```
+
+## How It Works
+
+From `src/commands/unlink.ts:10-17`:
+
+```typescript
+export const unlinkCmd = cli.Command.make('unlink', { args: argsArg }, (args) =>
+  Effect.gen(function* () {
+    const pm = yield* PackageManagerService;
+    const passthrough = Array.from(args.args);
+    const cmd = ShellCommand.make(pm.name, 'unlink', ...passthrough);
+    yield* Console.log(`Running: ${pm.name} unlink ${passthrough.join(' ')}`);
+    yield* runShellCommand(cmd);
+  }).pipe(Effect.provide(PackageManagerLayer)),
+);
+```
+
+The command:
+
+1. Detects your package manager
+2. Passes all arguments to the native unlink command
+3. Removes symbolic links from node\_modules
+
+## Package Manager Behavior
+
+<CodeGroup>
+
+```bash pnpm
+# Unlink specific package
+pnpm unlink my-package
+
+# Remove global link
+pnpm unlink --global
+```
+
+```bash bun
+# Unlink specific package
+bun unlink my-package
+
+# Unlink from current directory
+bun unlink
+```
+
+```bash npm
+# Unlink specific package
+npm unlink my-package
+
+# Remove global link
+npm unlink
+```
+
+</CodeGroup>
+
+## Verification
+
+Check if package is still linked:
+
+```bash
+pm ls my-package
+```
+
+```bash Output (linked)
+my-app@1.0.0
+└── my-package@1.0.0 -> /Users/you/projects/my-package
+```
+
+```bash Output (unlinked)
+my-app@1.0.0
+└── my-package@1.0.0
+```
+
+No `->` arrow means it's installed normally.
+
+## Restore Published Version
+
+After unlinking, reinstall from registry:
+
+```bash
+pm unlink my-library
+pm install
+```
+
+Or reinstall specific package:
+
+```bash
+pm unlink my-library
+pm add my-library
+```
+
+## Common Workflows
+
+### Complete Cleanup
+
+Remove all development links:
+
+```bash
+# Unlink packages
+pm unlink package-a package-b
+
+# Clean node_modules
+rm -rf node_modules
+
+# Fresh install
+pm install
+```
+
+### Switch Between Linked and Published
+
+```bash
+# Development mode (linked)
+pm link my-library
+
+# Production mode (published)
+pm unlink my-library
+pm install
+```
+
+### Verify No Links
+
+```bash
+# Check for symbolic links
+pm ls | grep '->'
+
+# Should return nothing if no links exist
+```
+
+## Troubleshooting
+
+### Package Still Linked
+
+If unlink doesn't work:
+
+1. **Manual removal**:
+   ```bash
+   rm -rf node_modules/my-package
+   pm install
+   ```
+
+2. **Clean reinstall**:
+   ```bash
+   rm -rf node_modules
+   pm install
+   ```
+
+### Global Link Persists
+
+```bash
+# List global links
+pm ls --global
+
+# Remove global link
+cd ~/projects/my-package
+pm unlink --global
+```
+
+### Module Resolution Issues
+
+After unlinking, you may need to:
+
+```bash
+# Clear package manager cache
+pm cache clean
+
+# Reinstall
+pm install
+```
+
+## Best Practices
+
+* **Unlink before commits** - Don't commit with linked packages
+* **Document linked packages** - Keep track of what's linked
+* **Verify after unlink** - Check with `pm ls` that links are removed
+* **Clean install after** - Run `pm install` to restore published versions
+
+:::tip
+If you're working in a monorepo, workspace features handle linking automatically - you don't need manual link/unlink.
+:::
+
+## Related Commands
+
+* [pm link](/commands/link) - Create symbolic links
+* [pm ls](/commands/ls) - List dependencies and check for links
+* [pm install](/commands/install) - Reinstall packages from registry
+
