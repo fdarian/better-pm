@@ -15,6 +15,7 @@ This repo itself uses pnpm to manage dependencies (see `pnpm-workspace.yaml`, `e
 - `src/project/config.ts` — Config loading; merges global `~/.config/better-pm/config.json` (XDG-aware) under per-project `pm.config.json`
 - `src/lib/errors.ts` — Tagged errors
 - `lua/pm/` — Neovim plugin module (`:pm cd` wraps `pm cd` and opens the result in oil.nvim); see `docs/nvim.md`
+- `apps/docs/` — Blume documentation site (private workspace package); see `apps/docs/AGENTS.md`
 - `plugin/` — Registers the `:Pm` user command and the `:pm` cmdline abbreviation that expands to it; lives at repo root (not `src/`) because lazy.nvim can't install from a subdirectory
 
 ## Commands
@@ -37,6 +38,8 @@ See `docs/deployment.md` for the full release pipeline.
 pnpm install
 bun run check:tsc
 bun entries/cli.ts i
+pnpm docs        # docs site dev server
+pnpm docs:build  # docs static build
 ```
 
 Never import the `@effect/platform-bun` root barrel from code that runs under vitest/node (e.g. test files) — it eagerly re-exports `BunRedis`, which needs the `bun` npm package and throws `Cannot find package 'bun'` at import time, before any test runs. Deep-import the submodule instead, e.g. `@effect/platform-bun/BunFileSystem` (see `src/pm/pnpm.test.ts`).

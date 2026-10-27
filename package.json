@@ -22,6 +22,8 @@
 		"format": "biome check --write",
 		"check:tsc": "tsrs --noEmit",
 		"build": "bun scripts/build-npm.ts",
+		"docs": "pnpm --filter docs dev",
+		"docs:build": "pnpm --filter docs build",
 		"ci:version": "pnpm exec changeset version && pnpm install --lockfile-only",
 		"ci:release": "bun run build && bun scripts/publish-npm.ts",
 		"test": "vitest run"
