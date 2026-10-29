@@ -1,5 +1,11 @@
 # better-pm
 
+## 0.5.3
+
+### Patch Changes
+
+- a2dce75: Stop `pm` from loading the project's `bunfig.toml` `preload` entries into its own process.
+
 ## 0.5.2
 
 ### Patch Changes
