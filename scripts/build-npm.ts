@@ -31,6 +31,9 @@ for (const platform of platforms) {
 			'--minify',
 			'--bytecode',
 			'--format=esm',
+			// pm runs in arbitrary project dirs; without this the compiled binary
+			// loads the project's bunfig.toml (e.g. `preload`) into pm itself.
+			'--no-compile-autoload-bunfig',
 			`--target=${target}`,
 			'entries/cli.ts',
 			`--outfile=${outfile}`,
