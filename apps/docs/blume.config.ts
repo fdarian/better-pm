@@ -1,10 +1,14 @@
 import { withPreset } from '@fdarian/blume-preset';
 import { defineConfig } from 'blume';
+import { posthog } from 'blume/analytics';
 import { filesystem } from 'blume/sources';
+
+const ph = process.env.POSTHOG_KEY;
 
 export default defineConfig(
 	withPreset({
 		title: 'Better PM',
+		...(ph ? { analytics: [posthog({ key: ph })] } : {}),
 		description: 'A CLI for smarter package manager operations in monorepos',
 		content: { sources: [filesystem({ root: 'src/pages' })] },
 		navigation: {
