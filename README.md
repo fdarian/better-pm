@@ -1,6 +1,6 @@
 # pm
 
-A CLI for smarter package manager operations (especially in monorepos).
+A CLI for smarter package manager operations (especially in monorepos). Docs: [better-pm.fdarian.com](https://better-pm.fdarian.com)
 
 - **Package manager agnostic** — works with pnpm, bun, and nub, no need to remember which one your project uses
 - **Clean signal handling** — `Ctrl+C` properly shuts down the entire process tree, no orphaned dev servers

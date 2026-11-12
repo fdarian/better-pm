@@ -4,6 +4,7 @@
 	"description": "Better CLI for package manager operations (especially in monorepos)",
 	"type": "module",
 	"license": "Apache-2.0",
+	"homepage": "https://better-pm.fdarian.com",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/fdarian/better-pm.git"
